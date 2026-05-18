@@ -1,21 +1,25 @@
-use satva_core::record::Record;
-use satva_core::value::Value;
+mod mock_source;
+mod rename_field;
+mod required_field_validator;
 
-fn main() {
-    let mut record = Record::new();
+use anyhow::Result;
 
-    record.insert("name", Value::string("Hardik"));
-    record.insert("age", Value::int64(21));
+use satva_core::pipeline::Pipeline;
 
-    if let Some(value) = record.get("name") {
-        if let Some(name) = value.as_string() {
-            println!("Name: {}", name);
-        }
-    }
+use mock_source::MockSource;
+use rename_field::RenameField;
+use required_field_validator::RequiredFieldValidator;
 
-    if let Some(value) = record.get("age") {
-        if let Some(age) = value.as_i64() {
-            println!("Age: {}", age);
-        }
-    }
+fn main() -> Result<()> {
+    let source = Box::new(MockSource);
+
+    let mut pipeline = Pipeline::new(source);
+
+    pipeline.add_transformer(Box::new(RenameField::new("fname", "first_name")));
+
+    pipeline.add_validator(Box::new(RequiredFieldValidator::new("first_name")));
+
+    pipeline.run()?;
+
+    Ok(())
 }

@@ -1,6 +1,9 @@
 pub mod pipeline;
+pub mod pipeline_stage;
 pub mod record;
 pub mod source;
+pub mod stage_error;
+pub mod stage_result;
 pub mod transformer;
 pub mod validation_error;
 pub mod validator;

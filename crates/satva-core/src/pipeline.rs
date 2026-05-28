@@ -1,56 +1,68 @@
 use anyhow::Result;
 
+use crate::pipeline_stage::PipelineStage;
 use crate::source::Source;
-use crate::transformer::Transformer;
-use crate::validator::Validator;
+use crate::stage_result::StageResult;
 
 pub struct Pipeline {
     source: Box<dyn Source>,
 
-    transformers: Vec<Box<dyn Transformer>>,
-
-    validators: Vec<Box<dyn Validator>>,
+    stages: Vec<Box<dyn PipelineStage>>,
 }
 
 impl Pipeline {
     pub fn new(source: Box<dyn Source>) -> Self {
         Self {
             source,
-            transformers: Vec::new(),
-            validators: Vec::new(),
+            stages: Vec::new(),
         }
     }
 
-    pub fn add_transformer(&mut self, transformer: Box<dyn Transformer>) {
-        self.transformers.push(transformer);
-    }
-
-    pub fn add_validator(&mut self, validator: Box<dyn Validator>) {
-        self.validators.push(validator);
+    pub fn add_stage(&mut self, stage: Box<dyn PipelineStage>) {
+        self.stages.push(stage);
     }
 
     pub fn run(&self) -> Result<()> {
         let records = self.source.read()?;
 
-        for mut record in records {
-            for transformer in &self.transformers {
-                record = transformer.transform(record)?;
-            }
+        for record in records {
+            let mut current_record = Some(record);
+            for stage in &self.stages {
+                let record = current_record.take().expect("record should exist");
 
-            let mut valid = true;
+                match stage.execute(record) {
+                    StageResult::Continue(record) => {
+                        current_record = Some(record);
+                    }
 
-            for validator in &self.validators {
-                if let Err(error) = validator.validate(&record) {
-                    println!("VALIDATION ERROR:\n{:#?}", error);
+                    StageResult::Skip { record, reason } => {
+                        println!("\nSKIPPED RECORD:");
 
-                    valid = false;
+                        println!("{:#?}", record);
 
-                    break;
+                        println!("\nSKIP REASON:");
+
+                        println!("{:#?}", reason);
+
+                        current_record = None;
+
+                        break;
+                    }
+
+                    StageResult::Error(error) => {
+                        println!("\nPIPELINE ERROR:");
+
+                        println!("{:#?}", error);
+
+                        return Ok(());
+                    }
                 }
             }
 
-            if valid {
-                println!("VALID RECORD:\n{:#?}", record);
+            if let Some(record) = current_record {
+                println!("\nFINAL RECORD:");
+
+                println!("{:#?}", record);
             }
         }
 

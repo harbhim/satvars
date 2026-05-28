@@ -12,14 +12,10 @@ use required_field_validator::RequiredFieldValidator;
 
 fn main() -> Result<()> {
     let source = Box::new(MockSource);
-
     let mut pipeline = Pipeline::new(source);
-
-    pipeline.add_transformer(Box::new(RenameField::new("fname", "first_name")));
-
-    pipeline.add_validator(Box::new(RequiredFieldValidator::new("first_name")));
-
+    pipeline.add_stage(Box::new(RequiredFieldValidator::new("fname")));
+    pipeline.add_stage(Box::new(RenameField::new("fname", "first_name")));
+    pipeline.add_stage(Box::new(RequiredFieldValidator::new("first_name")));
     pipeline.run()?;
-
     Ok(())
 }

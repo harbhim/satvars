@@ -1,7 +1,6 @@
-use anyhow::Result;
-
+use satva_core::pipeline_stage::PipelineStage;
 use satva_core::record::Record;
-use satva_core::transformer::Transformer;
+use satva_core::stage_result::StageResult;
 
 pub struct RenameField {
     from: String,
@@ -17,12 +16,16 @@ impl RenameField {
     }
 }
 
-impl Transformer for RenameField {
-    fn transform(&self, mut record: Record) -> Result<Record> {
+impl PipelineStage for RenameField {
+    fn name(&self) -> &str {
+        "RenameField"
+    }
+
+    fn execute(&self, mut record: Record) -> StageResult {
         if let Some(value) = record.remove(&self.from) {
             record.insert(&self.to, value);
         }
 
-        Ok(record)
+        StageResult::Continue(record)
     }
 }

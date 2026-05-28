@@ -1,6 +1,5 @@
 use satva_core::pipeline_stage::PipelineStage;
 use satva_core::record::Record;
-use satva_core::stage_error::StageError;
 use satva_core::stage_result::StageResult;
 
 pub struct RequiredFieldValidator {
@@ -16,7 +15,7 @@ impl RequiredFieldValidator {
 }
 
 impl PipelineStage for RequiredFieldValidator {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "RequiredFieldValidator"
     }
 
@@ -24,11 +23,7 @@ impl PipelineStage for RequiredFieldValidator {
         if record.get(&self.field).is_none() {
             return StageResult::Skip {
                 record,
-
-                reason: StageError::new(
-                    self.name(),
-                    &format!("Missing required field '{}'", self.field),
-                ),
+                reason: format!("Missing required field '{}'", self.field),
             };
         }
 

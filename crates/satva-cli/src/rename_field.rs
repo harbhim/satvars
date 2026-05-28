@@ -17,7 +17,7 @@ impl RenameField {
 }
 
 impl PipelineStage for RenameField {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "RenameField"
     }
 

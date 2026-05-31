@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug, Clone)]
 pub enum StageError {
     Validation {
@@ -37,6 +39,30 @@ impl StageError {
         Self::Execution {
             stage,
             message: message.to_string(),
+        }
+    }
+}
+
+impl fmt::Display for StageError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            StageError::Validation {
+                stage,
+                field,
+                message,
+            } => write!(
+                f,
+                "[{}] Validation error on field '{}': {}",
+                stage, field, message
+            ),
+
+            StageError::Transformation { stage, message } => {
+                write!(f, "[{}] Transformation error: {}", stage, message)
+            }
+
+            StageError::Execution { stage, message } => {
+                write!(f, "[{}] Execution error: {}", stage, message)
+            }
         }
     }
 }

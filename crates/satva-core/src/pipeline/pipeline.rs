@@ -23,13 +23,6 @@ impl Pipeline {
     }
 
     pub fn run(&self, options: PipelineOptions) -> Result<PipelineRunResult> {
-        let mut schema = self.source.schema()?;
-
-        for stage in &self.stages {
-            stage.validate(&schema)?;
-            stage.transform_schema(&mut schema)?;
-        }
-
         let records = self.source.read()?;
 
         let mut summary = PipelineSummary::default();
@@ -38,42 +31,43 @@ impl Pipeline {
         for record in records {
             summary.processed += 1;
 
-            let mut current_record = Some(record);
+            let mut current_record = record;
+            let mut record_completed = true;
 
             for stage in &self.stages {
-                let record = current_record.take().expect("record should exist");
-
-                match stage.execute(record) {
-                    StageResult::Continue(record) => {
-                        current_record = Some(record);
+                match stage.execute(current_record) {
+                    StageResult::Continue(r) => {
+                        current_record = r;
                     }
 
                     StageResult::Skip { reason, .. } => {
                         summary.skipped += 1;
+                        record_completed = false;
 
-                        logs.push(PipelineLog::Skipped {
-                            stage: stage.name(),
-                            reason,
-                        });
+                        if options.collect_logs {
+                            logs.push(PipelineLog::Skipped {
+                                stage: stage.name(),
+                                reason,
+                            });
+                        }
 
-                        current_record = None;
                         break;
                     }
 
                     StageResult::Fail { error, .. } => {
                         summary.failed += 1;
+                        record_completed = false;
 
                         if options.collect_logs {
                             logs.push(PipelineLog::Failed { error });
                         }
 
-                        current_record = None;
                         break;
                     }
                 }
             }
 
-            if current_record.is_some() {
+            if record_completed {
                 summary.succeeded += 1;
             }
         }

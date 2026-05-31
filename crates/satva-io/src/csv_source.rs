@@ -3,8 +3,6 @@ use csv;
 use satva_core::{record::Record, source::Source, value::Value};
 use std::path::PathBuf;
 
-use satva_core::Schema;
-
 pub struct CsvSource {
     path: PathBuf,
 }
@@ -16,13 +14,6 @@ impl CsvSource {
 }
 
 impl Source for CsvSource {
-    fn schema(&self) -> Result<Schema> {
-        let mut reader = csv::Reader::from_path(&self.path)?;
-        let headers = reader.headers()?;
-        Ok(Schema {
-            fields: headers.iter().map(|h| h.to_string()).collect(),
-        })
-    }
     fn read(&self) -> Result<Vec<Record>> {
         let mut reader = csv::Reader::from_path(&self.path)?;
         let headers = reader.headers()?.clone();

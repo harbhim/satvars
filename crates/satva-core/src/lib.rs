@@ -6,5 +6,5 @@ pub mod value;
 
 pub use pipeline::{
     Pipeline, PipelineLog, PipelineOptions, PipelineRunResult, PipelineStage, PipelineSummary,
-    Schema, StageError, StageResult,
+    StageError, StageResult,
 };

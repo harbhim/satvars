@@ -1,6 +1,6 @@
-use satva_core::pipeline_stage::PipelineStage;
 use satva_core::record::Record;
-use satva_core::stage_result::StageResult;
+
+use satva_core::{PipelineStage, Schema, StageError, StageResult};
 
 pub struct RenameField {
     from: String,
@@ -27,5 +27,19 @@ impl PipelineStage for RenameField {
         }
 
         StageResult::Continue(record)
+    }
+
+    fn transform_schema(&self, schema: &mut Schema) -> Result<(), StageError> {
+        let field = schema
+            .fields
+            .iter_mut()
+            .find(|f| *f == &self.from)
+            .ok_or_else(|| {
+                StageError::validation(self.name(), &self.from, "field does not exist")
+            })?;
+
+        *field = self.to.clone();
+
+        Ok(())
     }
 }

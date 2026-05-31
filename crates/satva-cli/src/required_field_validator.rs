@@ -1,6 +1,5 @@
-use satva_core::pipeline_stage::PipelineStage;
 use satva_core::record::Record;
-use satva_core::stage_result::StageResult;
+use satva_core::{PipelineStage, Schema, StageError, StageResult};
 
 pub struct RequiredFieldValidator {
     field: String,
@@ -28,5 +27,16 @@ impl PipelineStage for RequiredFieldValidator {
         }
 
         StageResult::Continue(record)
+    }
+    fn validate(&self, schema: &Schema) -> Result<(), StageError> {
+        if !schema.fields.contains(&self.field) {
+            return Err(StageError::validation(
+                self.name(),
+                &self.field,
+                "field does not exist",
+            ));
+        }
+
+        Ok(())
     }
 }

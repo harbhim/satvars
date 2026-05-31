@@ -27,20 +27,6 @@ impl StageError {
             message: message.to_string(),
         }
     }
-
-    pub fn transformation(stage: &'static str, message: &str) -> Self {
-        Self::Transformation {
-            stage,
-            message: message.to_string(),
-        }
-    }
-
-    pub fn execution(stage: &'static str, message: &str) -> Self {
-        Self::Execution {
-            stage,
-            message: message.to_string(),
-        }
-    }
 }
 
 impl fmt::Display for StageError {
@@ -66,3 +52,5 @@ impl fmt::Display for StageError {
         }
     }
 }
+
+impl std::error::Error for StageError {}

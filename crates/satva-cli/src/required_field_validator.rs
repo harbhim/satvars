@@ -18,14 +18,13 @@ impl PipelineStage for RequiredFieldValidator {
         "RequiredFieldValidator"
     }
 
-    fn execute(&self, record: Record) -> StageResult {
+    fn execute(&self, record: &mut Record) -> StageResult {
         if record.get(&self.field).is_none() {
             return StageResult::Skip {
-                record,
                 reason: format!("Missing required field '{}'", self.field),
             };
         }
 
-        StageResult::Continue(record)
+        StageResult::Continue
     }
 }

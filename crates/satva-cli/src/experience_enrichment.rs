@@ -13,7 +13,7 @@ impl PipelineStage for ExperienceEnrichment {
     fn name(&self) -> &'static str {
         "ExperienceEnrichment"
     }
-    fn execute(&self, mut record: Record) -> StageResult {
+    fn execute(&self, record: &mut Record) -> StageResult {
         let exp = record.get("experience_level");
 
         let years = match exp {
@@ -31,6 +31,6 @@ impl PipelineStage for ExperienceEnrichment {
 
         record.insert("seniority_level", level.into());
 
-        StageResult::Continue(record)
+        StageResult::Continue
     }
 }

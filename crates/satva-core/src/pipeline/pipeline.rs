@@ -28,20 +28,16 @@ impl Pipeline {
         let mut summary = PipelineSummary::default();
         let mut logs = Vec::new();
 
-        for (index, record) in records.into_iter().enumerate() {
+        for (index, mut record) in records.into_iter().enumerate() {
             let record_index = index + 1;
             summary.processed += 1;
 
-            let mut current_record = record;
             let mut record_completed = true;
 
             for stage in &self.stages {
-                match stage.execute(current_record) {
-                    StageResult::Continue(r) => {
-                        current_record = r;
-                    }
-
-                    StageResult::Skip { reason, .. } => {
+                match stage.execute(&mut record) {
+                    StageResult::Continue => {}
+                    StageResult::Skip { reason } => {
                         summary.skipped += 1;
                         record_completed = false;
 
@@ -56,7 +52,7 @@ impl Pipeline {
                         break;
                     }
 
-                    StageResult::Fail { error, .. } => {
+                    StageResult::Fail { error } => {
                         summary.failed += 1;
                         record_completed = false;
 

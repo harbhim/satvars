@@ -21,11 +21,11 @@ impl PipelineStage for RenameField {
         "RenameField"
     }
 
-    fn execute(&self, mut record: Record) -> StageResult {
+    fn execute(&self, record: &mut Record) -> StageResult {
         if let Some(value) = record.remove(&self.from) {
             record.insert(&self.to, value);
         }
 
-        StageResult::Continue(record)
+        StageResult::Continue
     }
 }

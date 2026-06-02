@@ -14,12 +14,11 @@ impl PipelineStage for AgeValidator {
         "AgeValidator"
     }
 
-    fn execute(&self, mut record: Record) -> StageResult {
+    fn execute(&self, record: &mut Record) -> StageResult {
         let age_value = match record.get("age") {
             Some(value) => value,
             None => {
                 return StageResult::Skip {
-                    record,
                     reason: "missing age".to_string(),
                 };
             }
@@ -30,14 +29,12 @@ impl PipelineStage for AgeValidator {
                 Ok(age) => age,
                 Err(_) => {
                     return StageResult::Fail {
-                        record,
                         error: StageError::execution(self.name(), "age is not a valid integer"),
                     };
                 }
             },
             None => {
                 return StageResult::Fail {
-                    record,
                     error: StageError::execution(self.name(), "age must be a string"),
                 };
             }
@@ -45,13 +42,12 @@ impl PipelineStage for AgeValidator {
 
         if age <= 0 {
             return StageResult::Fail {
-                record,
                 error: StageError::execution(self.name(), "age must be greater than zero"),
             };
         }
 
         record.insert("age", age.into());
 
-        StageResult::Continue(record)
+        StageResult::Continue
     }
 }

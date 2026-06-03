@@ -5,6 +5,12 @@ use super::{
     PipelineLog, PipelineOptions, PipelineRunResult, PipelineStage, PipelineSummary, StageResult,
 };
 
+enum RecordOutcome {
+    Succeeded,
+    Skipped,
+    Failed,
+}
+
 pub struct Pipeline {
     source: Box<dyn Source>,
     stages: Vec<Box<dyn PipelineStage>>,
@@ -32,18 +38,18 @@ impl Pipeline {
             let record_index = index + 1;
             summary.processed += 1;
 
-            let mut record_completed = true;
+            let mut outcome = RecordOutcome::Succeeded;
 
             for stage in &self.stages {
                 match stage.execute(&mut record) {
                     StageResult::Continue => {}
+
                     StageResult::Skip { reason } => {
-                        summary.skipped += 1;
-                        record_completed = false;
+                        outcome = RecordOutcome::Skipped;
 
                         if options.collect_logs {
                             logs.push(PipelineLog::Skipped {
-                                record_index: record_index,
+                                record_index,
                                 stage: stage.name(),
                                 reason,
                             });
@@ -53,12 +59,11 @@ impl Pipeline {
                     }
 
                     StageResult::Fail { error } => {
-                        summary.failed += 1;
-                        record_completed = false;
+                        outcome = RecordOutcome::Failed;
 
                         if options.collect_logs {
                             logs.push(PipelineLog::Failed {
-                                record_index: record_index,
+                                record_index,
                                 error,
                             });
                         }
@@ -68,8 +73,10 @@ impl Pipeline {
                 }
             }
 
-            if record_completed {
-                summary.succeeded += 1;
+            match outcome {
+                RecordOutcome::Succeeded => summary.succeeded += 1,
+                RecordOutcome::Skipped => summary.skipped += 1,
+                RecordOutcome::Failed => summary.failed += 1,
             }
         }
 

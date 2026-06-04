@@ -1,6 +1,6 @@
 use satva_core::record::Record;
 
-use satva_core::{PipelineStage, StageResult};
+use satva_core::{PipelineStage, StageContext, StageResult};
 
 pub struct RenameField {
     from: String,
@@ -21,7 +21,7 @@ impl PipelineStage for RenameField {
         "RenameField"
     }
 
-    fn execute(&self, record: &mut Record) -> StageResult {
+    fn execute(&self, record: &mut Record, _: &StageContext) -> StageResult {
         if let Some(value) = record.remove(&self.from) {
             record.insert(&self.to, value);
         }

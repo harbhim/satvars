@@ -2,7 +2,8 @@ use crate::source::Source;
 use anyhow::Result;
 
 use super::{
-    PipelineLog, PipelineOptions, PipelineRunResult, PipelineStage, PipelineSummary, StageResult,
+    PipelineLog, PipelineOptions, PipelineRunResult, PipelineStage, PipelineSummary, StageContext,
+    StageResult,
 };
 
 enum RecordOutcome {
@@ -40,8 +41,12 @@ impl Pipeline {
 
             let mut outcome = RecordOutcome::Succeeded;
 
+            let stage_context = StageContext {
+                record_index: record_index,
+            };
+
             for stage in &self.stages {
-                match stage.execute(&mut record) {
+                match stage.execute(&mut record, &stage_context) {
                     StageResult::Continue => {}
 
                     StageResult::Skip { reason } => {

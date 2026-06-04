@@ -1,5 +1,5 @@
 use satva_core::record::Record;
-use satva_core::{PipelineStage, StageError, StageResult};
+use satva_core::{PipelineStage, StageContext, StageError, StageResult};
 
 pub struct AgeValidator;
 
@@ -14,7 +14,7 @@ impl PipelineStage for AgeValidator {
         "AgeValidator"
     }
 
-    fn execute(&self, record: &mut Record) -> StageResult {
+    fn execute(&self, record: &mut Record, _: &StageContext) -> StageResult {
         let age_value = match record.get("age") {
             Some(value) => value,
             None => {

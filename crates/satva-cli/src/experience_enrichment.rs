@@ -1,5 +1,5 @@
 use satva_core::record::Record;
-use satva_core::{PipelineStage, StageResult};
+use satva_core::{PipelineStage, StageContext, StageResult};
 
 pub struct ExperienceEnrichment;
 
@@ -13,7 +13,7 @@ impl PipelineStage for ExperienceEnrichment {
     fn name(&self) -> &'static str {
         "ExperienceEnrichment"
     }
-    fn execute(&self, record: &mut Record) -> StageResult {
+    fn execute(&self, record: &mut Record, _: &StageContext) -> StageResult {
         let exp = record.get("experience_level");
 
         let years = match exp {

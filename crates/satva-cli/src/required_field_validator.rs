@@ -1,5 +1,5 @@
 use satva_core::record::Record;
-use satva_core::{PipelineStage, StageResult};
+use satva_core::{PipelineStage, StageContext, StageResult};
 
 pub struct RequiredFieldValidator {
     field: String,
@@ -18,7 +18,7 @@ impl PipelineStage for RequiredFieldValidator {
         "RequiredFieldValidator"
     }
 
-    fn execute(&self, record: &mut Record) -> StageResult {
+    fn execute(&self, record: &mut Record, _: &StageContext) -> StageResult {
         if record.get(&self.field).is_none() {
             return StageResult::Skip {
                 reason: format!("Missing required field '{}'", self.field),

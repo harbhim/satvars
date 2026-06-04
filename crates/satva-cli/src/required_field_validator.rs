@@ -1,6 +1,5 @@
 use satva_core::record::Record;
-use satva_core::validation_error::ValidationError;
-use satva_core::validator::Validator;
+use satva_core::{PipelineStage, StageResult};
 
 pub struct RequiredFieldValidator {
     field: String,
@@ -14,15 +13,18 @@ impl RequiredFieldValidator {
     }
 }
 
-impl Validator for RequiredFieldValidator {
-    fn validate(&self, record: &Record) -> Result<(), ValidationError> {
+impl PipelineStage for RequiredFieldValidator {
+    fn name(&self) -> &'static str {
+        "RequiredFieldValidator"
+    }
+
+    fn execute(&self, record: &mut Record) -> StageResult {
         if record.get(&self.field).is_none() {
-            return Err(ValidationError {
-                field: self.field.clone(),
-                message: "field is required".to_string(),
-            });
+            return StageResult::Skip {
+                reason: format!("Missing required field '{}'", self.field),
+            };
         }
 
-        Ok(())
+        StageResult::Continue
     }
 }

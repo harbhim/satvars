@@ -1,7 +1,10 @@
 pub mod pipeline;
+
 pub mod record;
 pub mod source;
-pub mod transformer;
-pub mod validation_error;
-pub mod validator;
 pub mod value;
+
+pub use pipeline::{
+    Pipeline, PipelineLog, PipelineOptions, PipelineRunResult, PipelineStage, PipelineSummary,
+    StageError, StageResult,
+};

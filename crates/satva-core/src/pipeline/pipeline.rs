@@ -1,3 +1,4 @@
+use crate::Sink;
 use crate::source::Source;
 use anyhow::Result;
 
@@ -15,6 +16,7 @@ enum RecordOutcome {
 pub struct Pipeline {
     source: Box<dyn Source>,
     stages: Vec<Box<dyn PipelineStage>>,
+    sink: Option<Box<dyn Sink>>,
 }
 
 impl Pipeline {
@@ -22,6 +24,7 @@ impl Pipeline {
         Self {
             source,
             stages: Vec::new(),
+            sink: None,
         }
     }
 
@@ -29,7 +32,11 @@ impl Pipeline {
         self.stages.push(stage);
     }
 
-    pub fn run(&self, options: PipelineOptions) -> Result<PipelineRunResult> {
+    pub fn set_sink(&mut self, sink: Box<dyn Sink>) {
+        self.sink = Some(sink);
+    }
+
+    pub fn run(&mut self, options: PipelineOptions) -> Result<PipelineRunResult> {
         let records = self.source.read()?;
 
         let mut summary = PipelineSummary::default();
@@ -79,7 +86,12 @@ impl Pipeline {
             }
 
             match outcome {
-                RecordOutcome::Succeeded => summary.succeeded += 1,
+                RecordOutcome::Succeeded => {
+                    if let Some(sink) = self.sink.as_mut() {
+                        sink.write(&record)?;
+                    }
+                    summary.succeeded += 1;
+                }
                 RecordOutcome::Skipped => summary.skipped += 1,
                 RecordOutcome::Failed => summary.failed += 1,
             }

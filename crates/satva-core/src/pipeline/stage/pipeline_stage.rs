@@ -1,4 +1,5 @@
-use super::{StageContext, StageResult};
+use super::context::StageContext;
+use super::result::StageResult;
 use crate::record::Record;
 
 pub trait PipelineStage: Send + Sync {

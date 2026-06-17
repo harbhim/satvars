@@ -1,4 +1,4 @@
-use super::stage_error::StageError;
+use super::StageError;
 
 #[derive(Debug, Clone)]
 pub enum PipelineLog {

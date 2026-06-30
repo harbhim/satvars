@@ -24,7 +24,7 @@ impl PipelineStage for EmployeeValidationStage {
 
 impl EmployeeValidationStage {
     fn enrich_experience(&self, record: &mut Record) -> StageResult {
-        let exp = record.get("experience_level");
+        let exp = record.get("experience_years");
         let years = match exp {
             Some(v) => v.to_string().parse::<i32>().unwrap_or(0),
             None => 0,

@@ -1,1 +1,3 @@
-// Sink implementations will live here.
+pub mod csv;
+
+pub use csv::CsvSink;

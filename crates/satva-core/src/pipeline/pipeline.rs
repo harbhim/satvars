@@ -74,7 +74,7 @@ impl Pipeline {
                         outcome = RecordOutcome::Failed;
 
                         if options.collect_logs {
-                            logs.push(PipelineLog::Failed {
+                            logs.push(PipelineLog::StageFailed {
                                 record_index,
                                 error,
                             });
@@ -88,9 +88,22 @@ impl Pipeline {
             match outcome {
                 RecordOutcome::Succeeded => {
                     if let Some(sink) = self.sink.as_mut() {
-                        sink.write(&record)?;
+                        match sink.write(&record) {
+                            Ok(()) => summary.succeeded += 1,
+                            Err(error) => {
+                                summary.failed += 1;
+
+                                if options.collect_logs {
+                                    logs.push(PipelineLog::SinkFailed {
+                                        record_index,
+                                        message: error.to_string(),
+                                    });
+                                }
+                            }
+                        }
+                    } else {
+                        summary.succeeded += 1;
                     }
-                    summary.succeeded += 1;
                 }
                 RecordOutcome::Skipped => summary.skipped += 1,
                 RecordOutcome::Failed => summary.failed += 1,

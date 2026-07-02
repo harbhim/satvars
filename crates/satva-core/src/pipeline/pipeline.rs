@@ -1,12 +1,13 @@
-use crate::Sink;
 use crate::source::Source;
+use crate::{Record, Sink};
 use anyhow::Result;
 
 use super::{
     PipelineLog, PipelineOptions, PipelineRunResult, PipelineStage, PipelineSummary, StageContext,
-    StageResult,
+    StageError, StageResult,
 };
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum RecordOutcome {
     Succeeded,
     Skipped,
@@ -37,80 +38,128 @@ impl Pipeline {
     }
 
     pub fn run(&mut self, options: PipelineOptions) -> Result<PipelineRunResult> {
-        let records_iter = self.source.read()?;
+        let records = self.source.read()?;
 
         let mut summary = PipelineSummary::default();
         let mut logs = Vec::new();
 
-        for (index, record_res) in records_iter.enumerate() {
-            let record_index = index + 1;
-            let mut record = record_res?;
+        for (index, record_result) in records.enumerate() {
+            let record = record_result?;
+
             summary.processed += 1;
 
-            let mut outcome = RecordOutcome::Succeeded;
-
-            let stage_context = StageContext {
-                record_index,
-            };
-
-            for stage in &self.stages {
-                match stage.execute(&mut record, &stage_context) {
-                    StageResult::Continue => {}
-
-                    StageResult::Skip { reason } => {
-                        outcome = RecordOutcome::Skipped;
-
-                        if options.collect_logs {
-                            logs.push(PipelineLog::Skipped {
-                                record_index,
-                                stage: stage.name(),
-                                reason,
-                            });
-                        }
-
-                        break;
-                    }
-
-                    StageResult::Fail { error } => {
-                        outcome = RecordOutcome::Failed;
-
-                        if options.collect_logs {
-                            logs.push(PipelineLog::StageFailed {
-                                record_index,
-                                error,
-                            });
-                        }
-
-                        break;
-                    }
-                }
-            }
-
-            match outcome {
-                RecordOutcome::Succeeded => {
-                    if let Some(sink) = self.sink.as_mut() {
-                        match sink.write(&record) {
-                            Ok(()) => summary.succeeded += 1,
-                            Err(error) => {
-                                summary.failed += 1;
-
-                                if options.collect_logs {
-                                    logs.push(PipelineLog::SinkFailed {
-                                        record_index,
-                                        message: error.to_string(),
-                                    });
-                                }
-                            }
-                        }
-                    } else {
-                        summary.succeeded += 1;
-                    }
-                }
+            match self.process_record(record, index + 1, &options, &mut logs) {
+                RecordOutcome::Succeeded => summary.succeeded += 1,
                 RecordOutcome::Skipped => summary.skipped += 1,
                 RecordOutcome::Failed => summary.failed += 1,
             }
         }
 
         Ok(PipelineRunResult { summary, logs })
+    }
+
+    fn process_record(
+        &mut self,
+        mut record: Record,
+        record_index: usize,
+        options: &PipelineOptions,
+        logs: &mut Vec<PipelineLog>,
+    ) -> RecordOutcome {
+        match self.execute_stages(&mut record, &StageContext { record_index }, options, logs) {
+            RecordOutcome::Succeeded => self.write_sink(&record, record_index, options, logs),
+            outcome => outcome,
+        }
+    }
+
+    fn execute_stages(
+        &self,
+        record: &mut Record,
+        context: &StageContext,
+        options: &PipelineOptions,
+        logs: &mut Vec<PipelineLog>,
+    ) -> RecordOutcome {
+        for stage in &self.stages {
+            match stage.execute(record, context) {
+                StageResult::Continue => {}
+
+                StageResult::Skip { reason } => {
+                    Self::log_stage_skip(options, logs, context.record_index, stage.name(), reason);
+                    return RecordOutcome::Skipped;
+                }
+
+                StageResult::Fail { error } => {
+                    Self::log_stage_failure(options, logs, context.record_index, error);
+                    return RecordOutcome::Failed;
+                }
+            }
+        }
+
+        RecordOutcome::Succeeded
+    }
+
+    fn write_sink(
+        &mut self,
+        record: &Record,
+        record_index: usize,
+        options: &PipelineOptions,
+        logs: &mut Vec<PipelineLog>,
+    ) -> RecordOutcome {
+        if let Some(sink) = self.sink.as_mut() {
+            match sink.write(record) {
+                Ok(()) => RecordOutcome::Succeeded,
+
+                Err(error) => {
+                    Self::log_sink_failure(options, logs, record_index, error.to_string());
+
+                    RecordOutcome::Failed
+                }
+            }
+        } else {
+            RecordOutcome::Succeeded
+        }
+    }
+
+    fn log_stage_skip(
+        options: &PipelineOptions,
+        logs: &mut Vec<PipelineLog>,
+        record_index: usize,
+        stage: &'static str,
+        reason: String,
+    ) {
+        if options.collect_logs {
+            logs.push(PipelineLog::Skipped {
+                record_index,
+                stage,
+                reason,
+            });
+        }
+    }
+
+    fn log_stage_failure(
+        options: &PipelineOptions,
+        logs: &mut Vec<PipelineLog>,
+        record_index: usize,
+        error: StageError,
+    ) {
+        if options.collect_logs {
+            logs.push(PipelineLog::StageFailed {
+                record_index,
+                error,
+            });
+        }
+    }
+
+    fn log_sink_failure(
+        options: &PipelineOptions,
+        logs: &mut Vec<PipelineLog>,
+        record_index: usize,
+        message: String,
+    ) {
+        if options.collect_logs {
+            logs.push(PipelineLog::SinkFailed {
+                record_index,
+                message,
+            });
+        }
     }
 }

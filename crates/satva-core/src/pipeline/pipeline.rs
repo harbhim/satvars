@@ -49,7 +49,7 @@ impl Pipeline {
             let mut outcome = RecordOutcome::Succeeded;
 
             let stage_context = StageContext {
-                record_index: record_index,
+                record_index,
             };
 
             for stage in &self.stages {

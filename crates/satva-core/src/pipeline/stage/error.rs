@@ -1,7 +1,6 @@
-use std::fmt;
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, thiserror::Error)]
 pub enum StageError {
+    #[error("[{stage}] Execution error: {message}")]
     Execution {
         stage: &'static str,
         message: String,
@@ -16,15 +15,3 @@ impl StageError {
         }
     }
 }
-
-impl fmt::Display for StageError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            StageError::Execution { stage, message } => {
-                write!(f, "[{}] Execution error: {}", stage, message)
-            }
-        }
-    }
-}
-
-impl std::error::Error for StageError {}

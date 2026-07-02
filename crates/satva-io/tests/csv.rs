@@ -19,8 +19,7 @@ fn temp_csv_path(name: &str) -> PathBuf {
         .as_nanos();
 
     std::env::temp_dir().join(format!(
-        "satva_io_{}_{}_{}.csv",
-        name, timestamp, unique_id
+        "satva_io_{name}_{timestamp}_{unique_id}.csv"
     ))
 }
 

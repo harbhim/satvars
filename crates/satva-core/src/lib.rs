@@ -8,7 +8,9 @@ pub mod value;
 
 pub use pipeline::{
     Pipeline, PipelineLog, PipelineOptions, PipelineRunResult, PipelineStage, PipelineSummary,
-    StageContext, StageError, StageResult,
+    SchemaValidation, StageContext, StageError, StageResult,
 };
 pub use schema::{DataType, Field, Schema};
 pub use sink::Sink;
+pub use source::Source;
+pub use value::Value;

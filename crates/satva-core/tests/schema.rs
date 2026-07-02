@@ -9,10 +9,10 @@ fn schema_can_be_created_with_fields() {
 
     assert_eq!(schema.fields().len(), 2);
     assert_eq!(schema.fields()[0].name(), "name");
-    assert_eq!(schema.fields()[0].data_type(), &DataType::String);
+    assert_eq!(schema.fields()[0].data_type(), DataType::String);
     assert!(!schema.fields()[0].is_nullable());
     assert_eq!(schema.fields()[1].name(), "age");
-    assert_eq!(schema.fields()[1].data_type(), &DataType::Int64);
+    assert_eq!(schema.fields()[1].data_type(), DataType::Int64);
     assert!(schema.fields()[1].is_nullable());
 }
 
@@ -27,7 +27,7 @@ fn schema_preserves_field_order() {
     let field_names = schema
         .fields()
         .iter()
-        .map(|field| field.name())
+        .map(satva_core::Field::name)
         .collect::<Vec<_>>();
 
     assert_eq!(field_names, vec!["employee_id", "first_name", "salary"]);
@@ -43,7 +43,7 @@ fn schema_can_find_field_by_name() {
     let field = schema.field("department").unwrap();
 
     assert_eq!(field.name(), "department");
-    assert_eq!(field.data_type(), &DataType::String);
+    assert_eq!(field.data_type(), DataType::String);
     assert!(field.is_nullable());
     assert!(schema.field("missing").is_none());
 }

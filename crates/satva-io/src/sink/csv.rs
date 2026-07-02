@@ -28,25 +28,27 @@ impl Sink for CsvSink {
             self.headers = Some(headers);
         }
 
+        let headers = self.headers.as_ref().ok_or_else(|| anyhow::anyhow!("Headers not initialized"))?;
+
         if self.writer.is_none() {
             let mut writer = csv::Writer::from_path(&self.path)?;
-            writer.write_record(self.headers.as_ref().unwrap())?;
+            writer.write_record(headers)?;
             self.writer = Some(writer);
         }
 
-        let headers = self.headers.as_ref().unwrap();
         let row = headers
             .iter()
             .map(|header| {
                 record
                     .fields
                     .get(header)
-                    .map(|value| value.to_string())
+                    .map(std::string::ToString::to_string)
                     .unwrap_or_default()
             })
             .collect::<Vec<_>>();
 
-        self.writer.as_mut().unwrap().write_record(row)?;
+        let writer = self.writer.as_mut().ok_or_else(|| anyhow::anyhow!("Writer not initialized"))?;
+        writer.write_record(row)?;
 
         Ok(())
     }

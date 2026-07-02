@@ -1,5 +1,5 @@
 use satva_core::PipelineStage;
-use satva_core::{StageContext, StageError, StageResult, record::Record};
+use satva_core::{StageContext, StageError, StageResult, record::Record, Value};
 
 pub struct EmployeeValidationStage;
 
@@ -26,8 +26,8 @@ impl EmployeeValidationStage {
     fn enrich_experience(&self, record: &mut Record) -> StageResult {
         let exp = record.get("experience_years");
         let years = match exp {
-            Some(v) => v.to_string().parse::<i32>().unwrap_or(0),
-            None => 0,
+            Some(Value::Int64(v)) => *v,
+            _ => 0,
         };
 
         let level = if years >= 8 {
@@ -44,56 +44,39 @@ impl EmployeeValidationStage {
     }
 
     fn validate_age(&self, record: &mut Record) -> StageResult {
-        let age_value = match record.get("age") {
-            Some(value) => value,
-            None => {
-                return StageResult::Skip {
-                    reason: "missing age".to_string(),
-                };
-            }
+        let Some(age_value) = record.get("age") else {
+            return StageResult::Skip {
+                reason: "missing age".to_string(),
+            };
         };
-        let age = match age_value.as_string() {
-            Some(value) => match value.parse::<i64>() {
-                Ok(age) => age,
-                Err(_) => {
-                    return StageResult::Fail {
-                        error: StageError::execution(self.name(), "age is not a valid integer"),
-                    };
-                }
-            },
-            None => {
-                return StageResult::Fail {
-                    error: StageError::execution(self.name(), "age must be a string"),
-                };
-            }
+        let Some(age) = age_value.as_i64() else {
+            return StageResult::Fail {
+                error: StageError::execution(self.name(), "age must be an integer"),
+            };
         };
         if age <= 0 {
             return StageResult::Fail {
                 error: StageError::execution(self.name(), "age must be greater than zero"),
             };
         }
-        record.insert("age", age.into());
         StageResult::Continue
     }
 
     fn validate_salary(&self, record: &mut Record) -> StageResult {
         let salary_value = record.get("salary");
-        let salary_str = match salary_value {
-            Some(v) => v.to_string(),
-            None => {
-                return StageResult::Skip {
-                    reason: "missing salary".to_string(),
+        let salary = match salary_value {
+            Some(Value::Int64(s)) => *s,
+            _ => {
+                return StageResult::Fail {
+                    error: StageError::execution(self.name(), "invalid salary"),
                 };
             }
         };
-        match salary_str.parse::<i64>() {
-            Ok(salary) if salary > 0 => {
-                record.insert("salary", salary.into());
-                StageResult::Continue
-            }
-            _ => StageResult::Fail {
+        if salary <= 0 {
+            return StageResult::Fail {
                 error: StageError::execution(self.name(), "invalid salary"),
-            },
+            };
         }
+        StageResult::Continue
     }
 }

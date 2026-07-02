@@ -41,10 +41,10 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::Null => write!(f, "null"),
-            Value::Int64(val) => write!(f, "{}", val),
-            Value::Float64(val) => write!(f, "{}", val),
-            Value::Boolean(val) => write!(f, "{}", val),
-            Value::String(val) => write!(f, "{}", val),
+            Value::Int64(val) => write!(f, "{val}"),
+            Value::Float64(val) => write!(f, "{val}"),
+            Value::Boolean(val) => write!(f, "{val}"),
+            Value::String(val) => write!(f, "{val}"),
         }
     }
 }

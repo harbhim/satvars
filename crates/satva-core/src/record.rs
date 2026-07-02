@@ -7,6 +7,12 @@ use anyhow::{Result, anyhow};
 pub struct Record {
     pub fields: HashMap<String, Value>,
 }
+impl Default for Record {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Record {
     pub fn new() -> Self {
         Self {
@@ -25,10 +31,10 @@ impl Record {
     pub fn require_string(&self, key: &str) -> Result<&str> {
         let value = self
             .get(key)
-            .ok_or_else(|| anyhow!("Missing field: {}", key))?;
+            .ok_or_else(|| anyhow!("Missing field: {key}"))?;
 
         value
             .as_string()
-            .ok_or_else(|| anyhow!("Field '{}' is not a string", key))
+            .ok_or_else(|| anyhow!("Field '{key}' is not a string"))
     }
 }

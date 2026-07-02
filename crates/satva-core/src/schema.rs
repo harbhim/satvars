@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DataType {
     Null,
     Int64,
@@ -27,8 +27,8 @@ impl Field {
         &self.name
     }
 
-    pub fn data_type(&self) -> &DataType {
-        &self.data_type
+    pub fn data_type(&self) -> DataType {
+        self.data_type
     }
 
     pub fn is_nullable(&self) -> bool {

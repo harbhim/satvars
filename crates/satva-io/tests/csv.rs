@@ -39,7 +39,7 @@ fn csv_source_reads_records_with_header_fields() -> Result<()> {
     fs::write(&path, "name,age,city\nAsha,31,Pune\nRavi,28,Mumbai\n")?;
 
     let source = CsvSource::new(&path);
-    let records = source.read()?;
+    let records: Vec<Record> = source.read()?.collect::<Result<Vec<_>, _>>()?;
 
     assert_eq!(records.len(), 2);
     assert_eq!(records[0].get("name"), Some(&Value::string("Asha")));

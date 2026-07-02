@@ -22,8 +22,9 @@ impl TestSource {
 }
 
 impl Source for TestSource {
-    fn read(&self) -> Result<Vec<Record>> {
-        Ok(self.records.clone())
+    fn read(&self) -> Result<Box<dyn Iterator<Item = Result<Record>>>> {
+        let it = self.records.clone().into_iter().map(Ok);
+        Ok(Box::new(it))
     }
 }
 

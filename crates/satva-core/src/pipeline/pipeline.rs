@@ -37,13 +37,14 @@ impl Pipeline {
     }
 
     pub fn run(&mut self, options: PipelineOptions) -> Result<PipelineRunResult> {
-        let records = self.source.read()?;
+        let records_iter = self.source.read()?;
 
         let mut summary = PipelineSummary::default();
         let mut logs = Vec::new();
 
-        for (index, mut record) in records.into_iter().enumerate() {
+        for (index, record_res) in records_iter.enumerate() {
             let record_index = index + 1;
+            let mut record = record_res?;
             summary.processed += 1;
 
             let mut outcome = RecordOutcome::Succeeded;

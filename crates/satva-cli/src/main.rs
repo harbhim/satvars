@@ -8,27 +8,18 @@ use employee_validation::EmployeeValidationStage;
 use rename_field::RenameField;
 use required_field_validator::RequiredFieldValidator;
 use satva_core::{
-    DataType, Field, PipelineOptions, Schema, SchemaValidation, pipeline::Pipeline,
+    PipelineOptions, Schema, SchemaValidation, pipeline::Pipeline, Source,
 };
 use satva_io::{CsvSink, CsvSource};
 
 fn main() -> Result<()> {
-    let source = Box::new(CsvSource::new("employees.csv"));
+    let source = CsvSource::new("employees.csv");
+    let sample = source.read_sample(1000)?;
+    let schema = Schema::infer(&sample);
+
     let sink = Box::new(CsvSink::new("cleaned_employees.csv"));
 
-    let schema = Schema::new(vec![
-        Field::new("employee_id", DataType::Int64, false),
-        Field::new("first_name", DataType::String, false),
-        Field::new("last_name", DataType::String, false),
-        Field::new("age", DataType::Int64, false),
-        Field::new("department", DataType::String, false),
-        Field::new("salary", DataType::Int64, false),
-        Field::new("education", DataType::String, true),
-        Field::new("city", DataType::String, false),
-        Field::new("experience_years", DataType::Int64, false),
-    ]);
-
-    let mut pipeline = Pipeline::new(source);
+    let mut pipeline = Pipeline::new(Box::new(source));
     pipeline.add_stage(Box::new(RequiredFieldValidator::new("first_name")));
     pipeline.add_stage(Box::new(RequiredFieldValidator::new("department")));
     pipeline.add_stage(Box::new(SchemaValidation::new(schema)));

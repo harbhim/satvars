@@ -7,9 +7,7 @@ use anyhow::Result;
 use employee_validation::EmployeeValidationStage;
 use rename_field::RenameField;
 use required_field_validator::RequiredFieldValidator;
-use satva_core::{
-    PipelineOptions, Schema, SchemaValidation, pipeline::Pipeline, Source,
-};
+use satva_core::{PipelineOptions, Schema, SchemaValidation, Source, pipeline::Pipeline};
 use satva_io::{CsvSink, CsvSource};
 
 fn main() -> Result<()> {
@@ -27,7 +25,7 @@ fn main() -> Result<()> {
     pipeline.add_stage(Box::new(RenameField::new("education", "edu")));
     pipeline.set_sink(sink);
 
-    let summary = pipeline.run(PipelineOptions { collect_logs: true })?;
+    let summary = pipeline.run(PipelineOptions::new())?;
     println!("{summary:#?}");
     Ok(())
 }

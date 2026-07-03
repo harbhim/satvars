@@ -4,7 +4,7 @@ use anyhow::Result;
 
 use super::{
     PipelineLog, PipelineOptions, PipelineRunResult, PipelineStage, PipelineSummary, StageContext,
-    StageError, StageResult,
+    StageError, StageExecutor, StageResult,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -77,40 +77,24 @@ impl Pipeline {
         options: &PipelineOptions,
         logs: &mut Vec<PipelineLog>,
     ) -> RecordExecutionResult {
-        match self.execute_stages(&mut record, &StageContext { record_index }, options, logs) {
-            result if result.outcome == RecordOutcome::Succeeded => {
-                self.write_sink(&record, record_index, options, logs)
+        let executor = StageExecutor::new(&self.stages);
+
+        let result = executor.execute(&mut record, &StageContext { record_index });
+
+        match result.result {
+            StageResult::Continue => self.write_sink(&record, record_index, options, logs),
+
+            StageResult::Skip { reason } => {
+                Self::log_stage_skip(options, logs, record_index, result.stage, reason);
+                RecordExecutionResult::new(RecordOutcome::Skipped)
             }
-            result => result,
-        }
-    }
 
-    fn execute_stages(
-        &self,
-        record: &mut Record,
-        context: &StageContext,
-        options: &PipelineOptions,
-        logs: &mut Vec<PipelineLog>,
-    ) -> RecordExecutionResult {
-        for stage in &self.stages {
-            match stage.execute(record, context) {
-                StageResult::Continue => {}
+            StageResult::Fail { error } => {
+                Self::log_stage_failure(options, logs, record_index, error);
 
-                StageResult::Skip { reason } => {
-                    Self::log_stage_skip(options, logs, context.record_index, stage.name(), reason);
-
-                    return RecordExecutionResult::new(RecordOutcome::Skipped);
-                }
-
-                StageResult::Fail { error } => {
-                    Self::log_stage_failure(options, logs, context.record_index, error);
-
-                    return RecordExecutionResult::new(RecordOutcome::Failed);
-                }
+                RecordExecutionResult::new(RecordOutcome::Failed)
             }
         }
-
-        RecordExecutionResult::new(RecordOutcome::Succeeded)
     }
 
     fn write_sink(
@@ -142,7 +126,7 @@ impl Pipeline {
         stage: &'static str,
         reason: String,
     ) {
-        if options.collect_logs {
+        if options.collect_logs() {
             logs.push(PipelineLog::Skipped {
                 record_index,
                 stage,
@@ -157,7 +141,7 @@ impl Pipeline {
         record_index: usize,
         error: StageError,
     ) {
-        if options.collect_logs {
+        if options.collect_logs() {
             logs.push(PipelineLog::StageFailed {
                 record_index,
                 error,
@@ -171,7 +155,7 @@ impl Pipeline {
         record_index: usize,
         message: String,
     ) {
-        if options.collect_logs {
+        if options.collect_logs() {
             logs.push(PipelineLog::SinkFailed {
                 record_index,
                 message,

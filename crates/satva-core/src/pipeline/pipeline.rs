@@ -56,14 +56,14 @@ impl Pipeline {
         for (index, record_result) in records.enumerate() {
             let record = record_result?;
 
-            summary.processed += 1;
+            summary.record_processed();
 
             let result = self.process_record(record, index + 1, &options, &mut logs);
 
             match result.outcome {
-                RecordOutcome::Succeeded => summary.succeeded += 1,
-                RecordOutcome::Skipped => summary.skipped += 1,
-                RecordOutcome::Failed => summary.failed += 1,
+                RecordOutcome::Succeeded => summary.record_succeeded(),
+                RecordOutcome::Skipped => summary.record_skipped(),
+                RecordOutcome::Failed => summary.record_failed(),
             }
         }
 

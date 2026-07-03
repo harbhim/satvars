@@ -14,6 +14,16 @@ enum RecordOutcome {
     Failed,
 }
 
+struct RecordExecutionResult {
+    outcome: RecordOutcome,
+}
+
+impl RecordExecutionResult {
+    fn new(outcome: RecordOutcome) -> Self {
+        Self { outcome }
+    }
+}
+
 pub struct Pipeline {
     source: Box<dyn Source>,
     stages: Vec<Box<dyn PipelineStage>>,
@@ -48,7 +58,9 @@ impl Pipeline {
 
             summary.processed += 1;
 
-            match self.process_record(record, index + 1, &options, &mut logs) {
+            let result = self.process_record(record, index + 1, &options, &mut logs);
+
+            match result.outcome {
                 RecordOutcome::Succeeded => summary.succeeded += 1,
                 RecordOutcome::Skipped => summary.skipped += 1,
                 RecordOutcome::Failed => summary.failed += 1,
@@ -64,10 +76,12 @@ impl Pipeline {
         record_index: usize,
         options: &PipelineOptions,
         logs: &mut Vec<PipelineLog>,
-    ) -> RecordOutcome {
+    ) -> RecordExecutionResult {
         match self.execute_stages(&mut record, &StageContext { record_index }, options, logs) {
-            RecordOutcome::Succeeded => self.write_sink(&record, record_index, options, logs),
-            outcome => outcome,
+            result if result.outcome == RecordOutcome::Succeeded => {
+                self.write_sink(&record, record_index, options, logs)
+            }
+            result => result,
         }
     }
 
@@ -77,24 +91,26 @@ impl Pipeline {
         context: &StageContext,
         options: &PipelineOptions,
         logs: &mut Vec<PipelineLog>,
-    ) -> RecordOutcome {
+    ) -> RecordExecutionResult {
         for stage in &self.stages {
             match stage.execute(record, context) {
                 StageResult::Continue => {}
 
                 StageResult::Skip { reason } => {
                     Self::log_stage_skip(options, logs, context.record_index, stage.name(), reason);
-                    return RecordOutcome::Skipped;
+
+                    return RecordExecutionResult::new(RecordOutcome::Skipped);
                 }
 
                 StageResult::Fail { error } => {
                     Self::log_stage_failure(options, logs, context.record_index, error);
-                    return RecordOutcome::Failed;
+
+                    return RecordExecutionResult::new(RecordOutcome::Failed);
                 }
             }
         }
 
-        RecordOutcome::Succeeded
+        RecordExecutionResult::new(RecordOutcome::Succeeded)
     }
 
     fn write_sink(
@@ -103,19 +119,19 @@ impl Pipeline {
         record_index: usize,
         options: &PipelineOptions,
         logs: &mut Vec<PipelineLog>,
-    ) -> RecordOutcome {
+    ) -> RecordExecutionResult {
         if let Some(sink) = self.sink.as_mut() {
             match sink.write(record) {
-                Ok(()) => RecordOutcome::Succeeded,
+                Ok(()) => RecordExecutionResult::new(RecordOutcome::Succeeded),
 
                 Err(error) => {
                     Self::log_sink_failure(options, logs, record_index, error.to_string());
 
-                    RecordOutcome::Failed
+                    RecordExecutionResult::new(RecordOutcome::Failed)
                 }
             }
         } else {
-            RecordOutcome::Succeeded
+            RecordExecutionResult::new(RecordOutcome::Succeeded)
         }
     }
 

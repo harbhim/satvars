@@ -9,4 +9,5 @@ workspace = true
 [dependencies]
 anyhow.workspace = true
 csv = "1"
+serde_json = "1"
 satva-core = { path = "../satva-core" }

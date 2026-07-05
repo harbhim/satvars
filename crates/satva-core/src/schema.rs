@@ -1,5 +1,5 @@
-use crate::record::Record;
 use crate::Value;
+use crate::record::Record;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DataType {
@@ -70,7 +70,8 @@ impl Schema {
         }
 
         let mut field_order = Vec::new();
-        let mut field_stats: std::collections::HashMap<String, TypeStats> = std::collections::HashMap::new();
+        let mut field_stats: std::collections::HashMap<String, TypeStats> =
+            std::collections::HashMap::new();
 
         for record in records {
             for (key, value) in &record.fields {
@@ -111,7 +112,10 @@ impl Schema {
         // Detect missing fields in any records to determine nullability
         for record in records {
             for key in &field_order {
-                #[expect(clippy::collapsible_if, reason = "avoid let_chains syntax which may not compile on older toolchains")]
+                #[expect(
+                    clippy::collapsible_if,
+                    reason = "avoid let_chains syntax which may not compile on older toolchains"
+                )]
                 if let Some(stats) = field_stats.get_mut(key) {
                     if !record.fields.contains_key(key) {
                         stats.nullable = true;
@@ -123,7 +127,8 @@ impl Schema {
         let mut fields = Vec::new();
         for name in field_order {
             if let Some(stats) = field_stats.remove(&name) {
-                let total_non_null = stats.int_count + stats.float_count + stats.bool_count + stats.string_count;
+                let total_non_null =
+                    stats.int_count + stats.float_count + stats.bool_count + stats.string_count;
                 let data_type = if total_non_null == 0 {
                     DataType::String
                 } else if stats.int_count * 2 > total_non_null {

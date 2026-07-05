@@ -1,9 +1,9 @@
-use crate::{DataType, Schema, Value};
-use crate::record::Record;
-use super::pipeline_stage::PipelineStage;
 use super::context::StageContext;
-use super::result::StageResult;
 use super::error::StageError;
+use super::pipeline_stage::PipelineStage;
+use super::result::StageResult;
+use crate::record::Record;
+use crate::{DataType, Schema, Value};
 
 pub struct SchemaValidation {
     schema: Schema,
@@ -44,7 +44,12 @@ impl SchemaValidation {
         }
     }
 
-    fn coerce_int64(&self, value: &Value, is_nullable: bool, key: &str) -> Result<Value, StageError> {
+    fn coerce_int64(
+        &self,
+        value: &Value,
+        is_nullable: bool,
+        key: &str,
+    ) -> Result<Value, StageError> {
         match value {
             Value::Int64(v) => Ok(Value::Int64(*v)),
             Value::String(s) => {
@@ -61,7 +66,9 @@ impl SchemaValidation {
                     s.parse::<i64>().map(Value::Int64).map_err(|e| {
                         StageError::execution(
                             self.name(),
-                            &format!("Failed to parse field '{key}' with value '{s}' as Int64: {e}"),
+                            &format!(
+                                "Failed to parse field '{key}' with value '{s}' as Int64: {e}"
+                            ),
                         )
                     })
                 }
@@ -73,7 +80,12 @@ impl SchemaValidation {
         }
     }
 
-    fn coerce_float64(&self, value: &Value, is_nullable: bool, key: &str) -> Result<Value, StageError> {
+    fn coerce_float64(
+        &self,
+        value: &Value,
+        is_nullable: bool,
+        key: &str,
+    ) -> Result<Value, StageError> {
         match value {
             Value::Float64(v) => Ok(Value::Float64(*v)),
             Value::Int64(v) => Ok(Value::Float64(*v as f64)),
@@ -91,7 +103,9 @@ impl SchemaValidation {
                     s.parse::<f64>().map(Value::Float64).map_err(|e| {
                         StageError::execution(
                             self.name(),
-                            &format!("Failed to parse field '{key}' with value '{s}' as Float64: {e}"),
+                            &format!(
+                                "Failed to parse field '{key}' with value '{s}' as Float64: {e}"
+                            ),
                         )
                     })
                 }
@@ -103,7 +117,12 @@ impl SchemaValidation {
         }
     }
 
-    fn coerce_boolean(&self, value: &Value, is_nullable: bool, key: &str) -> Result<Value, StageError> {
+    fn coerce_boolean(
+        &self,
+        value: &Value,
+        is_nullable: bool,
+        key: &str,
+    ) -> Result<Value, StageError> {
         match value {
             Value::Boolean(v) => Ok(Value::Boolean(*v)),
             Value::String(s) => {
@@ -120,7 +139,9 @@ impl SchemaValidation {
                     s.parse::<bool>().map(Value::Boolean).map_err(|e| {
                         StageError::execution(
                             self.name(),
-                            &format!("Failed to parse field '{key}' with value '{s}' as Boolean: {e}"),
+                            &format!(
+                                "Failed to parse field '{key}' with value '{s}' as Boolean: {e}"
+                            ),
                         )
                     })
                 }

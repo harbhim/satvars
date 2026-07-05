@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, Copy)]
 pub struct PipelineOptions {
-    collect_logs: bool,
+    pub collect_logs: bool,
 }
 
 impl Default for PipelineOptions {

@@ -28,7 +28,10 @@ impl Sink for CsvSink {
             self.headers = Some(headers);
         }
 
-        let headers = self.headers.as_ref().ok_or_else(|| anyhow::anyhow!("Headers not initialized"))?;
+        let headers = self
+            .headers
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Headers not initialized"))?;
 
         if self.writer.is_none() {
             let mut writer = csv::Writer::from_path(&self.path)?;
@@ -47,7 +50,10 @@ impl Sink for CsvSink {
             })
             .collect::<Vec<_>>();
 
-        let writer = self.writer.as_mut().ok_or_else(|| anyhow::anyhow!("Writer not initialized"))?;
+        let writer = self
+            .writer
+            .as_mut()
+            .ok_or_else(|| anyhow::anyhow!("Writer not initialized"))?;
         writer.write_record(row)?;
 
         Ok(())

@@ -1,6 +1,6 @@
 use satva_core::{
-    record::Record, SchemaValidation, DataType, Field, Schema, Value,
-    PipelineStage, StageContext, StageResult,
+    DataType, Field, PipelineStage, Schema, SchemaValidation, StageContext, StageResult, Value,
+    record::Record,
 };
 
 #[test]
@@ -25,7 +25,10 @@ fn test_schema_validation_success_and_coercion() {
     let result = validation.execute(&mut record, &ctx);
     assert!(matches!(result, StageResult::Continue));
 
-    assert_eq!(record.get("name").unwrap(), &Value::String("Alice".to_string()));
+    assert_eq!(
+        record.get("name").unwrap(),
+        &Value::String("Alice".to_string())
+    );
     assert_eq!(record.get("age").unwrap(), &Value::Int64(30));
     assert_eq!(record.get("salary").unwrap(), &Value::Float64(75000.50));
     assert_eq!(record.get("active").unwrap(), &Value::Boolean(true));

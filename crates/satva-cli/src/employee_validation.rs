@@ -1,5 +1,5 @@
 use satva_core::PipelineStage;
-use satva_core::{StageContext, StageError, StageResult, record::Record, Value};
+use satva_core::{StageContext, StageError, StageResult, Value, record::Record};
 
 pub struct EmployeeValidationStage;
 

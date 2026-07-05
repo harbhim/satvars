@@ -58,7 +58,7 @@ impl Pipeline {
 
             summary.record_processed();
 
-            let result = self.process_record(record, index + 1, &options, &mut logs);
+            let result = self.process_record(record, index + 1, options, &mut logs);
 
             match result.outcome {
                 RecordOutcome::Succeeded => summary.record_succeeded(),
@@ -74,7 +74,7 @@ impl Pipeline {
         &mut self,
         mut record: Record,
         record_index: usize,
-        options: &PipelineOptions,
+        options: PipelineOptions,
         logs: &mut Vec<PipelineLog>,
     ) -> RecordExecutionResult {
         let executor = StageExecutor::new(&self.stages);
@@ -101,7 +101,7 @@ impl Pipeline {
         &mut self,
         record: &Record,
         record_index: usize,
-        options: &PipelineOptions,
+        options: PipelineOptions,
         logs: &mut Vec<PipelineLog>,
     ) -> RecordExecutionResult {
         if let Some(sink) = self.sink.as_mut() {
@@ -120,7 +120,7 @@ impl Pipeline {
     }
 
     fn log_stage_skip(
-        options: &PipelineOptions,
+        options: PipelineOptions,
         logs: &mut Vec<PipelineLog>,
         record_index: usize,
         stage: &'static str,
@@ -136,7 +136,7 @@ impl Pipeline {
     }
 
     fn log_stage_failure(
-        options: &PipelineOptions,
+        options: PipelineOptions,
         logs: &mut Vec<PipelineLog>,
         record_index: usize,
         error: StageError,
@@ -150,7 +150,7 @@ impl Pipeline {
     }
 
     fn log_sink_failure(
-        options: &PipelineOptions,
+        options: PipelineOptions,
         logs: &mut Vec<PipelineLog>,
         record_index: usize,
         message: String,

@@ -18,9 +18,7 @@ fn temp_csv_path(name: &str) -> PathBuf {
         .unwrap()
         .as_nanos();
 
-    std::env::temp_dir().join(format!(
-        "satva_io_{name}_{timestamp}_{unique_id}.csv"
-    ))
+    std::env::temp_dir().join(format!("satva_io_{name}_{timestamp}_{unique_id}.csv"))
 }
 
 fn record(fields: &[(&str, Value)]) -> Record {

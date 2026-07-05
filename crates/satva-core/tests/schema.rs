@@ -1,4 +1,4 @@
-use satva_core::{DataType, Field, Schema, record::Record, Value};
+use satva_core::{DataType, Field, Schema, Value, record::Record};
 
 #[test]
 fn schema_can_be_created_with_fields() {
@@ -24,11 +24,7 @@ fn schema_preserves_field_order() {
         Field::new("salary", DataType::Float64, true),
     ]);
 
-    let field_names = schema
-        .fields()
-        .iter()
-        .map(Field::name)
-        .collect::<Vec<_>>();
+    let field_names = schema.fields().iter().map(Field::name).collect::<Vec<_>>();
 
     assert_eq!(field_names, vec!["employee_id", "first_name", "salary"]);
 }

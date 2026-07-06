@@ -8,7 +8,8 @@ use employee_validation::EmployeeValidationStage;
 use rename_field::RenameField;
 use required_field_validator::RequiredFieldValidator;
 
-use satva_core::{PipelineOptions, Schema, SchemaValidation, Source, pipeline::Pipeline};
+use satva_core::{PipelineOptions, SchemaValidation, Source, pipeline::Pipeline};
+use satva_types::Schema;
 
 use satva_io::sink::JsonSink;
 use satva_io::source::JsonSource;

@@ -1,7 +1,7 @@
-use super::context::StageContext;
-use super::error::StageError;
-use super::pipeline_stage::PipelineStage;
-use super::result::StageResult;
+use crate::pipeline::PipelineStage;
+use crate::pipeline::StageContext;
+use crate::pipeline::StageError;
+use crate::pipeline::StageResult;
 use satva_types::{DataType, Record, Schema, Value};
 
 pub struct SchemaValidation {
@@ -25,7 +25,7 @@ impl SchemaValidation {
                 if *value != Value::Null {
                     return Err(StageError::execution(
                         self.name(),
-                        &format!("Field '{key}' must be null"),
+                        format!("Field '{key}' must be null"),
                     ));
                 }
                 Ok(Value::Null)
@@ -58,23 +58,21 @@ impl SchemaValidation {
                     } else {
                         Err(StageError::execution(
                             self.name(),
-                            &format!("Field '{key}' is not nullable but got empty string"),
+                            format!("Field '{key}' is not nullable but got empty string"),
                         ))
                     }
                 } else {
                     s.parse::<i64>().map(Value::Int64).map_err(|e| {
                         StageError::execution(
                             self.name(),
-                            &format!(
-                                "Failed to parse field '{key}' with value '{s}' as Int64: {e}"
-                            ),
+                            format!("Failed to parse field '{key}' with value '{s}' as Int64: {e}"),
                         )
                     })
                 }
             }
             _ => Err(StageError::execution(
                 self.name(),
-                &format!("Field '{key}' is not compatible with Int64"),
+                format!("Field '{key}' is not compatible with Int64"),
             )),
         }
     }
@@ -95,14 +93,14 @@ impl SchemaValidation {
                     } else {
                         Err(StageError::execution(
                             self.name(),
-                            &format!("Field '{key}' is not nullable but got empty string"),
+                            format!("Field '{key}' is not nullable but got empty string"),
                         ))
                     }
                 } else {
                     s.parse::<f64>().map(Value::Float64).map_err(|e| {
                         StageError::execution(
                             self.name(),
-                            &format!(
+                            format!(
                                 "Failed to parse field '{key}' with value '{s}' as Float64: {e}"
                             ),
                         )
@@ -111,7 +109,7 @@ impl SchemaValidation {
             }
             _ => Err(StageError::execution(
                 self.name(),
-                &format!("Field '{key}' is not compatible with Float64"),
+                format!("Field '{key}' is not compatible with Float64"),
             )),
         }
     }
@@ -131,14 +129,14 @@ impl SchemaValidation {
                     } else {
                         Err(StageError::execution(
                             self.name(),
-                            &format!("Field '{key}' is not nullable but got empty string"),
+                            format!("Field '{key}' is not nullable but got empty string"),
                         ))
                     }
                 } else {
                     s.parse::<bool>().map(Value::Boolean).map_err(|e| {
                         StageError::execution(
                             self.name(),
-                            &format!(
+                            format!(
                                 "Failed to parse field '{key}' with value '{s}' as Boolean: {e}"
                             ),
                         )
@@ -147,7 +145,7 @@ impl SchemaValidation {
             }
             _ => Err(StageError::execution(
                 self.name(),
-                &format!("Field '{key}' is not compatible with Boolean"),
+                format!("Field '{key}' is not compatible with Boolean"),
             )),
         }
     }
@@ -167,7 +165,7 @@ impl PipelineStage for SchemaValidation {
                         return StageResult::Fail {
                             error: StageError::execution(
                                 self.name(),
-                                &format!("Missing required field: {key}"),
+                                format!("Missing required field: {key}"),
                             ),
                         };
                     }

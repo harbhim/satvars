@@ -35,6 +35,14 @@ impl Value {
             _ => None,
         }
     }
+
+    pub fn as_f64(&self) -> Option<f64> {
+        match self {
+            Self::Float64(value) => Some(*value),
+            Self::Int64(value) => Some(*value as f64),
+            _ => None,
+        }
+    }
 }
 
 impl fmt::Display for Value {
@@ -58,5 +66,23 @@ impl From<i64> for Value {
 impl From<&str> for Value {
     fn from(value: &str) -> Self {
         Value::String(value.to_string())
+    }
+}
+
+impl From<f64> for Value {
+    fn from(value: f64) -> Self {
+        Self::Float64(value)
+    }
+}
+
+impl From<bool> for Value {
+    fn from(value: bool) -> Self {
+        Self::Boolean(value)
+    }
+}
+
+impl From<String> for Value {
+    fn from(value: String) -> Self {
+        Self::String(value)
     }
 }

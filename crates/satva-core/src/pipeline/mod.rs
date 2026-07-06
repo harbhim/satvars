@@ -4,17 +4,16 @@ pub mod options;
 #[expect(clippy::module_inception)]
 pub mod pipeline;
 pub mod run_result;
-pub mod stage;
+pub mod runtime;
 pub mod summary;
 
 pub use log::PipelineLog;
 pub use options::PipelineOptions;
 pub use pipeline::Pipeline;
 pub use run_result::PipelineRunResult;
-pub use stage::context::StageContext;
-pub use stage::error::StageError;
-pub use stage::executor::StageExecutor;
-pub use stage::pipeline_stage::PipelineStage;
-pub use stage::result::StageResult;
-pub use stage::schema_validation::SchemaValidation;
+pub use runtime::context::StageContext;
+pub use runtime::error::StageError;
+pub use runtime::executor::StageExecutor;
+pub use runtime::result::StageResult;
+pub use runtime::stage::PipelineStage;
 pub use summary::PipelineSummary;

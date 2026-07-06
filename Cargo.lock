@@ -84,6 +84,7 @@ name = "satva-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "satva-expr",
  "satva-types",
  "thiserror",
 ]
@@ -97,7 +98,6 @@ name = "satva-expr"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "satva-core",
  "satva-types",
 ]
 

@@ -10,3 +10,4 @@ workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
 satva-types = { path = "../satva-types" }
+satva-expr = { path = "../satva-expr" }

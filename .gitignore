@@ -4,3 +4,4 @@ notes.txt
 *.csv
 /docs/
 .DS_Store
+*employees*

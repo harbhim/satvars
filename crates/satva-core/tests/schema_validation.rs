@@ -1,7 +1,7 @@
 use satva_core::{
-    DataType, Field, PipelineStage, Schema, SchemaValidation, StageContext, StageResult, Value,
-    record::Record,
+    DataType, Field, PipelineStage, Schema, SchemaValidation, StageContext, StageResult,
 };
+use satva_types::{Record, Value};
 
 #[test]
 fn test_schema_validation_success_and_coercion() {

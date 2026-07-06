@@ -1,11 +1,10 @@
 use anyhow::{Result, anyhow};
-use satva_core::record::Record;
 use satva_core::sink::Sink;
 use satva_core::source::Source;
-use satva_core::value::Value;
 use satva_core::{
     Pipeline, PipelineLog, PipelineOptions, PipelineStage, StageContext, StageError, StageResult,
 };
+use satva_types::{Record, Value};
 use std::sync::{
     Arc, Mutex,
     atomic::{AtomicUsize, Ordering},

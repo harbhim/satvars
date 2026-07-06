@@ -1,5 +1,5 @@
-use satva_core::record::Record;
 use satva_core::{PipelineStage, StageContext, StageResult};
+use satva_types::Record;
 
 pub struct RequiredFieldValidator {
     field: String,

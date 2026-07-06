@@ -1,5 +1,5 @@
 use anyhow::{Result, anyhow};
-use satva_core::{Value, record::Record};
+use satva_types::{Record, Value};
 
 use crate::expr::{BinaryOperator, Expression, UnaryOperator};
 

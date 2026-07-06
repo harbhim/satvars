@@ -1,4 +1,5 @@
-use crate::{PipelineStage, Record, StageContext, StageResult};
+use crate::{PipelineStage, StageContext, StageResult};
+use satva_types::Record;
 
 pub struct StageExecutionResult {
     pub stage: &'static str,

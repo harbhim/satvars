@@ -1,6 +1,7 @@
 use anyhow::Result;
 use csv;
-use satva_core::{record::Record, source::Source, value::Value};
+use satva_core::source::Source;
+use satva_types::{Record, Value};
 use std::path::PathBuf;
 
 pub struct CsvSource {

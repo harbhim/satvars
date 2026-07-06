@@ -1,5 +1,4 @@
-use crate::Value;
-use crate::record::Record;
+use satva_types::{Record, Value};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DataType {

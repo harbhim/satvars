@@ -5,4 +5,5 @@ edition = "2024"
 
 [dependencies]
 satva-core = { path = "../satva-core" }
+satva-types = { path = "../satva-types" }
 anyhow.workspace = true

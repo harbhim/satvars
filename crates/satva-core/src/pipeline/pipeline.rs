@@ -1,6 +1,7 @@
+use crate::Sink;
 use crate::source::Source;
-use crate::{Record, Sink};
 use anyhow::Result;
+use satva_types::Record;
 
 use super::{
     PipelineLog, PipelineOptions, PipelineRunResult, PipelineStage, PipelineSummary, StageContext,

@@ -1,6 +1,6 @@
 use super::context::StageContext;
 use super::result::StageResult;
-use crate::record::Record;
+use satva_types::Record;
 
 pub trait PipelineStage: Send + Sync {
     fn name(&self) -> &'static str;

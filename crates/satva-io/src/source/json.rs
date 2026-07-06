@@ -5,7 +5,8 @@ use std::{
 };
 
 use anyhow::{Result, anyhow};
-use satva_core::{record::Record, source::Source, value::Value};
+use satva_core::source::Source;
+use satva_types::{Record, Value};
 
 pub struct JsonSource {
     path: PathBuf,

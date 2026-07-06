@@ -76,6 +76,7 @@ dependencies = [
  "anyhow",
  "satva-core",
  "satva-io",
+ "satva-types",
 ]
 
 [[package]]
@@ -83,6 +84,7 @@ name = "satva-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "satva-types",
  "thiserror",
 ]
 
@@ -96,6 +98,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "satva-core",
+ "satva-types",
 ]
 
 [[package]]
@@ -105,6 +108,7 @@ dependencies = [
  "anyhow",
  "csv",
  "satva-core",
+ "satva-types",
  "serde_json",
 ]
 
@@ -115,6 +119,9 @@ version = "0.1.0"
 [[package]]
 name = "satva-types"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+]
 
 [[package]]
 name = "serde"

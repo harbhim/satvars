@@ -9,4 +9,5 @@ workspace = true
 [dependencies]
 satva-core = { path = "../satva-core" }
 satva-io = { path = "../satva-io"}
+satva-types = { path = "../satva-types"}
 anyhow.workspace = true

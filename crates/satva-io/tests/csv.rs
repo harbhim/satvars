@@ -1,9 +1,8 @@
 use anyhow::Result;
-use satva_core::record::Record;
 use satva_core::sink::Sink;
 use satva_core::source::Source;
-use satva_core::value::Value;
 use satva_io::{CsvSink, CsvSource};
+use satva_types::{Record, Value};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};

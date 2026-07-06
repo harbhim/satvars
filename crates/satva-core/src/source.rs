@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use crate::record::Record;
+use satva_types::Record;
 
 pub trait Source {
     fn read(&self) -> Result<Box<dyn Iterator<Item = Result<Record>>>>;

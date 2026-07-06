@@ -1,4 +1,4 @@
-use satva_core::Value;
+use satva_types::Value;
 
 /// A logical expression tree.
 ///
@@ -93,19 +93,19 @@ impl Expression {
 
     // Arithmetic
 
-    pub fn add(self, rhs: Expression) -> Self {
+    pub fn plus(self, rhs: Expression) -> Self {
         self.binary(BinaryOperator::Add, rhs)
     }
 
-    pub fn sub(self, rhs: Expression) -> Self {
+    pub fn minus(self, rhs: Expression) -> Self {
         self.binary(BinaryOperator::Subtract, rhs)
     }
 
-    pub fn mul(self, rhs: Expression) -> Self {
+    pub fn times(self, rhs: Expression) -> Self {
         self.binary(BinaryOperator::Multiply, rhs)
     }
 
-    pub fn div(self, rhs: Expression) -> Self {
+    pub fn divide_by(self, rhs: Expression) -> Self {
         self.binary(BinaryOperator::Divide, rhs)
     }
 
@@ -115,27 +115,27 @@ impl Expression {
 
     // Comparison
 
-    pub fn eq(self, rhs: Expression) -> Self {
+    pub fn equal_to(self, rhs: Expression) -> Self {
         self.binary(BinaryOperator::Equal, rhs)
     }
 
-    pub fn ne(self, rhs: Expression) -> Self {
+    pub fn not_equal_to(self, rhs: Expression) -> Self {
         self.binary(BinaryOperator::NotEqual, rhs)
     }
 
-    pub fn gt(self, rhs: Expression) -> Self {
+    pub fn greater_than(self, rhs: Expression) -> Self {
         self.binary(BinaryOperator::GreaterThan, rhs)
     }
 
-    pub fn ge(self, rhs: Expression) -> Self {
+    pub fn greater_than_or_equal_to(self, rhs: Expression) -> Self {
         self.binary(BinaryOperator::GreaterThanOrEqual, rhs)
     }
 
-    pub fn lt(self, rhs: Expression) -> Self {
+    pub fn less_than(self, rhs: Expression) -> Self {
         self.binary(BinaryOperator::LessThan, rhs)
     }
 
-    pub fn le(self, rhs: Expression) -> Self {
+    pub fn less_than_or_equal_to(self, rhs: Expression) -> Self {
         self.binary(BinaryOperator::LessThanOrEqual, rhs)
     }
 
@@ -151,11 +151,11 @@ impl Expression {
 
     // Unary
 
-    pub fn not(self) -> Self {
+    pub fn logical_not(self) -> Self {
         self.unary(UnaryOperator::Not)
     }
 
-    pub fn neg(self) -> Self {
+    pub fn negate(self) -> Self {
         self.unary(UnaryOperator::Negate)
     }
 }

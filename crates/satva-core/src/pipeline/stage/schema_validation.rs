@@ -2,8 +2,8 @@ use super::context::StageContext;
 use super::error::StageError;
 use super::pipeline_stage::PipelineStage;
 use super::result::StageResult;
-use crate::record::Record;
-use crate::{DataType, Schema, Value};
+use crate::{DataType, Schema};
+use satva_types::{Record, Value};
 
 pub struct SchemaValidation {
     schema: Schema,

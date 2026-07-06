@@ -1,11 +1,11 @@
+use anyhow::Result;
+use satva_core::sink::Sink;
+use satva_types::{Record, Value};
 use std::{
     fs::File,
     io::{BufWriter, Write},
     path::PathBuf,
 };
-
-use anyhow::Result;
-use satva_core::{record::Record, sink::Sink, value::Value};
 
 pub struct JsonSink {
     path: PathBuf,

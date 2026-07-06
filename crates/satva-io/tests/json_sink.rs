@@ -1,7 +1,8 @@
 use std::fs;
 
-use satva_core::{record::Record, sink::Sink, value::Value};
+use satva_core::sink::Sink;
 use satva_io::sink::JsonSink;
+use satva_types::{Record, Value};
 
 #[test]
 fn writes_json_lines() {

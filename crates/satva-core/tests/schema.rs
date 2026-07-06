@@ -1,4 +1,5 @@
-use satva_core::{DataType, Field, Schema, Value, record::Record};
+use satva_core::{DataType, Field, Schema};
+use satva_types::{Record, Value};
 
 #[test]
 fn schema_can_be_created_with_fields() {

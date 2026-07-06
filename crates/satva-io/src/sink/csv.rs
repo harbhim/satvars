@@ -1,6 +1,7 @@
 use anyhow::Result;
 use csv;
-use satva_core::{record::Record, sink::Sink};
+use satva_core::sink::Sink;
+use satva_types::Record;
 use std::fs::File;
 use std::path::PathBuf;
 

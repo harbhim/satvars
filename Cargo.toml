@@ -1,13 +1,5 @@
 [workspace]
-members = [
-    "crates/satva-arrow",
-    "crates/satva-cli",
-    "crates/satva-core",
-    "crates/satva-execution",
-    "crates/satva-expr",
-    "crates/satva-io",
-    "crates/satva-python",
-]
+members = ["crates/*"]
 resolver = "2"
 
 [workspace.dependencies]

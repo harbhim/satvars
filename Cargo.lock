@@ -93,6 +93,10 @@ version = "0.1.0"
 [[package]]
 name = "satva-expr"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "satva-core",
+]
 
 [[package]]
 name = "satva-io"
@@ -106,6 +110,10 @@ dependencies = [
 
 [[package]]
 name = "satva-python"
+version = "0.1.0"
+
+[[package]]
+name = "satva-types"
 version = "0.1.0"
 
 [[package]]

@@ -3,7 +3,11 @@ name = "satva-cli"
 version = "0.1.0"
 edition = "2024"
 
+[lints]
+workspace = true
+
 [dependencies]
 satva-core = { path = "../satva-core" }
 satva-io = { path = "../satva-io"}
+satva-types = { path = "../satva-types"}
 anyhow.workspace = true

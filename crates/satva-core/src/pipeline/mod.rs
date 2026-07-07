@@ -1,17 +1,21 @@
+pub mod builder;
 pub mod log;
 pub mod options;
+// The sub-module `pipeline` is named the same as the parent module `pipeline` to contain the main pipeline struct definition.
+#[expect(clippy::module_inception)]
 pub mod pipeline;
 pub mod run_result;
-pub mod stage;
-pub mod stage_error;
-pub mod stage_result;
+pub mod runtime;
 pub mod summary;
 
+pub use builder::PipelineBuilder;
 pub use log::PipelineLog;
 pub use options::PipelineOptions;
 pub use pipeline::Pipeline;
 pub use run_result::PipelineRunResult;
-pub use stage::PipelineStage;
-pub use stage_error::StageError;
-pub use stage_result::StageResult;
+pub use runtime::context::StageContext;
+pub use runtime::error::StageError;
+pub use runtime::executor::StageExecutor;
+pub use runtime::result::StageResult;
+pub use runtime::stage::PipelineStage;
 pub use summary::PipelineSummary;

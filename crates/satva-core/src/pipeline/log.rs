@@ -1,4 +1,4 @@
-use super::stage_error::StageError;
+use super::StageError;
 
 #[derive(Debug, Clone)]
 pub enum PipelineLog {
@@ -7,8 +7,12 @@ pub enum PipelineLog {
         stage: &'static str,
         reason: String,
     },
-    Failed {
+    StageFailed {
         record_index: usize,
         error: StageError,
+    },
+    SinkFailed {
+        record_index: usize,
+        message: String,
     },
 }

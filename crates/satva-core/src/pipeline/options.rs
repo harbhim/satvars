@@ -8,3 +8,23 @@ impl Default for PipelineOptions {
         Self { collect_logs: true }
     }
 }
+
+impl PipelineOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_logs() -> Self {
+        Self { collect_logs: true }
+    }
+
+    pub fn without_logs() -> Self {
+        Self {
+            collect_logs: false,
+        }
+    }
+
+    pub fn collect_logs(&self) -> bool {
+        self.collect_logs
+    }
+}

@@ -1,4 +1,4 @@
-use super::stage_error::StageError;
+use super::error::StageError;
 
 #[derive(Debug)]
 pub enum StageResult {

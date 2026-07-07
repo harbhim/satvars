@@ -1,5 +1,0 @@
-[dependencies]
-arrow.workspace = true
-rayon.workspace = true
-serde.workspace = true
-anyhow.workspace = true

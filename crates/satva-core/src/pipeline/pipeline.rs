@@ -1,12 +1,12 @@
-use crate::Sink;
-use crate::source::Source;
-use anyhow::Result;
-use satva_types::Record;
-
+use super::builder::PipelineBuilder;
 use super::{
     PipelineLog, PipelineOptions, PipelineRunResult, PipelineStage, PipelineSummary, StageContext,
     StageError, StageExecutor, StageResult,
 };
+use crate::Sink;
+use crate::source::Source;
+use anyhow::Result;
+use satva_types::Record;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum RecordOutcome {
@@ -38,6 +38,11 @@ impl Pipeline {
             stages: Vec::new(),
             sink: None,
         }
+    }
+
+    #[must_use]
+    pub fn builder() -> PipelineBuilder {
+        PipelineBuilder::new()
     }
 
     pub fn add_stage(&mut self, stage: Box<dyn PipelineStage>) {

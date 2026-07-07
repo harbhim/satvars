@@ -1,3 +1,4 @@
+pub mod builder;
 pub mod log;
 pub mod options;
 // The sub-module `pipeline` is named the same as the parent module `pipeline` to contain the main pipeline struct definition.
@@ -7,6 +8,7 @@ pub mod run_result;
 pub mod runtime;
 pub mod summary;
 
+pub use builder::PipelineBuilder;
 pub use log::PipelineLog;
 pub use options::PipelineOptions;
 pub use pipeline::Pipeline;

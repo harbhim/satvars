@@ -155,3 +155,95 @@ fn is_not_null_returns_true() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn cast_int_from_string() -> Result<()> {
+    let mut record = Record::new();
+    record.insert("age", "42".into());
+
+    let value = Evaluator::evaluate(&field("age").cast_int(), &record)?;
+
+    assert_eq!(value, Value::Int64(42));
+
+    Ok(())
+}
+
+#[test]
+fn cast_int_from_float() -> Result<()> {
+    let mut record = Record::new();
+    record.insert("salary", Value::Float64(42.9));
+
+    let value = Evaluator::evaluate(&field("salary").cast_int(), &record)?;
+
+    assert_eq!(value, Value::Int64(42));
+
+    Ok(())
+}
+
+#[test]
+fn cast_float_from_string() -> Result<()> {
+    let mut record = Record::new();
+    record.insert("salary", "42.5".into());
+
+    let value = Evaluator::evaluate(&field("salary").cast_float(), &record)?;
+
+    assert_eq!(value, Value::Float64(42.5));
+
+    Ok(())
+}
+
+#[test]
+fn cast_bool_from_string() -> Result<()> {
+    let mut record = Record::new();
+    record.insert("active", "true".into());
+
+    let value = Evaluator::evaluate(&field("active").cast_bool(), &record)?;
+
+    assert_eq!(value, Value::Boolean(true));
+
+    Ok(())
+}
+
+#[test]
+fn cast_string_from_int() -> Result<()> {
+    let mut record = Record::new();
+    record.insert("id", 100.into());
+
+    let value = Evaluator::evaluate(&field("id").cast_string(), &record)?;
+
+    assert_eq!(value, Value::String("100".to_string()));
+
+    Ok(())
+}
+
+#[test]
+fn cast_null_remains_null() -> Result<()> {
+    let mut record = Record::new();
+    record.insert("value", Value::Null);
+
+    let value = Evaluator::evaluate(&field("value").cast_string(), &record)?;
+
+    assert_eq!(value, Value::Null);
+
+    Ok(())
+}
+
+#[test]
+fn cast_int_invalid_string() {
+    let mut record = Record::new();
+    record.insert("age", "abc".into());
+
+    let result = Evaluator::evaluate(&field("age").cast_int(), &record);
+
+    assert!(result.is_err());
+}
+
+#[test]
+fn cast_bool_invalid_string() {
+    let mut record = Record::new();
+    record.insert("active", "yes".into());
+
+    let result = Evaluator::evaluate(&field("active").cast_bool(), &record);
+
+    assert!(result.is_err());
+}

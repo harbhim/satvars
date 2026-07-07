@@ -1,6 +1,6 @@
 use anyhow::{Result, anyhow};
 
-use crate::PipelineStage;
+use crate::{PipelineOptions, PipelineStage};
 use crate::{pipeline::Pipeline, sink::Sink, source::Source};
 
 pub struct PipelineBuilder {
@@ -22,6 +22,11 @@ impl PipelineBuilder {
             sink: None,
             stages: Vec::new(),
         }
+    }
+
+    pub fn run(self) -> anyhow::Result<crate::PipelineRunResult> {
+        let mut pipeline = self.build()?;
+        pipeline.run(PipelineOptions::default())
     }
 
     #[must_use]

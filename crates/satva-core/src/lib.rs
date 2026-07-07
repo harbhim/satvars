@@ -1,4 +1,5 @@
 pub mod pipeline;
+pub mod prelude;
 pub mod sink;
 pub mod source;
 pub mod stages;

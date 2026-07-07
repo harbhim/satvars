@@ -10,5 +10,5 @@ pub use pipeline::{
 };
 pub use sink::Sink;
 pub use source::Source;
-pub use stages::FilterStage;
+pub use stages::{FilterStage, RenameFieldStage, SetFieldStage};
 pub use validation::SchemaValidation;

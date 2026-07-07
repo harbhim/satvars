@@ -1,14 +1,12 @@
 mod employee_validation;
-mod rename_field;
 mod required_field_validator;
 
 use anyhow::Result;
 
 use employee_validation::EmployeeValidationStage;
-use rename_field::RenameField;
 use required_field_validator::RequiredFieldValidator;
 
-use satva_core::{PipelineOptions, SchemaValidation, Source, pipeline::Pipeline};
+use satva_core::{PipelineOptions, RenameFieldStage, SchemaValidation, Source, pipeline::Pipeline};
 use satva_types::Schema;
 
 use satva_io::sink::JsonSink;
@@ -31,7 +29,7 @@ fn main() -> Result<()> {
     pipeline.add_stage(Box::new(RequiredFieldValidator::new("department")));
     pipeline.add_stage(Box::new(SchemaValidation::new(schema)));
     pipeline.add_stage(Box::new(EmployeeValidationStage));
-    pipeline.add_stage(Box::new(RenameField::new("education", "edu")));
+    pipeline.add_stage(Box::new(RenameFieldStage::new("education", "edu")));
 
     pipeline.set_sink(sink);
 

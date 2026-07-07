@@ -1,3 +1,4 @@
+use crate::Function;
 use satva_types::Value;
 
 /// A logical expression tree.
@@ -7,18 +8,19 @@ use satva_types::Value;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
     Literal(Value),
-
     Field(String),
-
     Unary {
         op: UnaryOperator,
         expr: Box<Expression>,
     },
-
     Binary {
         left: Box<Expression>,
         op: BinaryOperator,
         right: Box<Expression>,
+    },
+    Function {
+        function: Function,
+        arguments: Vec<Expression>,
     },
 }
 
@@ -75,6 +77,13 @@ where
     Expression::Literal(value.into())
 }
 
+pub fn concat<I>(arguments: I) -> Expression
+where
+    I: IntoIterator<Item = Expression>,
+{
+    Expression::function(Function::Concat, arguments)
+}
+
 impl Expression {
     fn binary(self, op: BinaryOperator, rhs: Expression) -> Self {
         Self::Binary {
@@ -88,6 +97,16 @@ impl Expression {
         Self::Unary {
             op,
             expr: Box::new(self),
+        }
+    }
+
+    fn function<I>(function: Function, arguments: I) -> Self
+    where
+        I: IntoIterator<Item = Expression>,
+    {
+        Self::Function {
+            function,
+            arguments: arguments.into_iter().collect(),
         }
     }
 
@@ -157,5 +176,27 @@ impl Expression {
 
     pub fn negate(self) -> Self {
         self.unary(UnaryOperator::Negate)
+    }
+
+    // String
+
+    #[must_use]
+    pub fn upper(self) -> Self {
+        Self::function(Function::Upper, [self])
+    }
+
+    #[must_use]
+    pub fn lower(self) -> Self {
+        Self::function(Function::Lower, [self])
+    }
+
+    #[must_use]
+    pub fn trim(self) -> Self {
+        Self::function(Function::Trim, [self])
+    }
+
+    #[must_use]
+    pub fn length(self) -> Self {
+        Self::function(Function::Length, [self])
     }
 }

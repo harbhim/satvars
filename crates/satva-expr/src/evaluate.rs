@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 
 use satva_types::{Record, Value};
 
-use crate::{BinaryOperator, Expression, UnaryOperator};
+use crate::{BinaryOperator, Expression, Function, UnaryOperator};
 
 pub struct Evaluator;
 
@@ -28,6 +28,28 @@ impl Evaluator {
 
                 Self::evaluate_binary(left, *op, right)
             }
+
+            Expression::Function {
+                function,
+                arguments,
+            } => {
+                let arguments = arguments
+                    .iter()
+                    .map(|expr| Self::evaluate(expr, record))
+                    .collect::<Result<Vec<_>>>()?;
+
+                Self::evaluate_function(*function, arguments)
+            }
+        }
+    }
+
+    fn evaluate_function(function: Function, arguments: Vec<Value>) -> Result<Value> {
+        match function {
+            Function::Upper => upper(arguments),
+            Function::Lower => lower(arguments),
+            Function::Trim => trim(arguments),
+            Function::Length => length(arguments),
+            Function::Concat => concat(arguments),
         }
     }
 
@@ -128,4 +150,45 @@ fn compare(
     };
 
     Ok(Value::Boolean(predicate(ordering)))
+}
+
+fn upper(arguments: Vec<Value>) -> Result<Value> {
+    match arguments.as_slice() {
+        [Value::String(value)] => Ok(Value::String(value.to_uppercase())),
+        _ => Err(anyhow!("upper() expects one string argument")),
+    }
+}
+
+fn lower(arguments: Vec<Value>) -> Result<Value> {
+    match arguments.as_slice() {
+        [Value::String(value)] => Ok(Value::String(value.to_lowercase())),
+        _ => Err(anyhow!("lower() expects one string argument")),
+    }
+}
+
+fn trim(arguments: Vec<Value>) -> Result<Value> {
+    match arguments.as_slice() {
+        [Value::String(value)] => Ok(Value::String(value.trim().to_string())),
+        _ => Err(anyhow!("trim() expects one string argument")),
+    }
+}
+
+fn length(arguments: Vec<Value>) -> Result<Value> {
+    match arguments.as_slice() {
+        [Value::String(value)] => Ok(Value::Int64(value.chars().count() as i64)),
+        _ => Err(anyhow!("length() expects one string argument")),
+    }
+}
+
+fn concat(arguments: Vec<Value>) -> Result<Value> {
+    let mut result = String::new();
+
+    for value in arguments {
+        match value {
+            Value::String(text) => result.push_str(&text),
+            _ => return Err(anyhow!("concat() expects string arguments")),
+        }
+    }
+
+    Ok(Value::String(result))
 }

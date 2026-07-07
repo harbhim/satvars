@@ -6,4 +6,15 @@ pub enum Function {
     Trim,
     Length,
     Concat,
+
+    // Null
+    Coalesce,
+    IsNull,
+    IsNotNull,
+
+    // Casts
+    CastInt,
+    CastFloat,
+    CastBool,
+    CastString,
 }

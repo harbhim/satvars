@@ -84,6 +84,14 @@ where
     Expression::function(Function::Concat, arguments)
 }
 
+#[must_use]
+pub fn coalesce<I>(arguments: I) -> Expression
+where
+    I: IntoIterator<Item = Expression>,
+{
+    Expression::function(Function::Coalesce, arguments)
+}
+
 impl Expression {
     fn binary(self, op: BinaryOperator, rhs: Expression) -> Self {
         Self::Binary {
@@ -198,5 +206,35 @@ impl Expression {
     #[must_use]
     pub fn length(self) -> Self {
         Self::function(Function::Length, [self])
+    }
+
+    #[must_use]
+    pub fn is_null(self) -> Self {
+        Self::function(Function::IsNull, [self])
+    }
+
+    #[must_use]
+    pub fn is_not_null(self) -> Self {
+        Self::function(Function::IsNotNull, [self])
+    }
+
+    #[must_use]
+    pub fn cast_int(self) -> Self {
+        Self::function(Function::CastInt, [self])
+    }
+
+    #[must_use]
+    pub fn cast_float(self) -> Self {
+        Self::function(Function::CastFloat, [self])
+    }
+
+    #[must_use]
+    pub fn cast_bool(self) -> Self {
+        Self::function(Function::CastBool, [self])
+    }
+
+    #[must_use]
+    pub fn cast_string(self) -> Self {
+        Self::function(Function::CastString, [self])
     }
 }

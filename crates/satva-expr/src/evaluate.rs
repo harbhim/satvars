@@ -50,6 +50,13 @@ impl Evaluator {
             Function::Trim => trim(arguments),
             Function::Length => length(arguments),
             Function::Concat => concat(arguments),
+            Function::Coalesce => coalesce(arguments),
+            Function::IsNull => is_null(arguments),
+            Function::IsNotNull => is_not_null(arguments),
+            Function::CastInt => cast_int(arguments),
+            Function::CastFloat => cast_float(arguments),
+            Function::CastBool => cast_bool(arguments),
+            Function::CastString => cast_string(arguments),
         }
     }
 
@@ -191,4 +198,92 @@ fn concat(arguments: Vec<Value>) -> Result<Value> {
     }
 
     Ok(Value::String(result))
+}
+
+fn coalesce(arguments: Vec<Value>) -> Result<Value> {
+    if arguments.is_empty() {
+        return Err(anyhow!("coalesce() expects at least one argument"));
+    }
+
+    for value in arguments {
+        if value != Value::Null {
+            return Ok(value);
+        }
+    }
+
+    Ok(Value::Null)
+}
+
+fn is_null(arguments: Vec<Value>) -> Result<Value> {
+    match arguments.as_slice() {
+        [value] => Ok(Value::Boolean(*value == Value::Null)),
+        _ => Err(anyhow!("is_null() expects one argument")),
+    }
+}
+
+fn is_not_null(arguments: Vec<Value>) -> Result<Value> {
+    match arguments.as_slice() {
+        [value] => Ok(Value::Boolean(*value != Value::Null)),
+        _ => Err(anyhow!("is_not_null() expects one argument")),
+    }
+}
+
+fn cast_int(arguments: Vec<Value>) -> Result<Value> {
+    match arguments.as_slice() {
+        [Value::Int64(v)] => Ok(Value::Int64(*v)),
+
+        [Value::Float64(v)] => Ok(Value::Int64(*v as i64)),
+
+        [Value::Boolean(v)] => Ok(Value::Int64(i64::from(*v))),
+
+        [Value::String(v)] => v.parse::<i64>().map(Value::Int64).map_err(Into::into),
+
+        [Value::Null] => Ok(Value::Null),
+
+        _ => Err(anyhow!("cast_int() expects one argument")),
+    }
+}
+
+fn cast_float(arguments: Vec<Value>) -> Result<Value> {
+    match arguments.as_slice() {
+        [Value::Float64(v)] => Ok(Value::Float64(*v)),
+
+        [Value::Int64(v)] => Ok(Value::Float64(*v as f64)),
+
+        [Value::Boolean(v)] => Ok(Value::Float64(if *v { 1.0 } else { 0.0 })),
+
+        [Value::String(v)] => v.parse::<f64>().map(Value::Float64).map_err(Into::into),
+
+        [Value::Null] => Ok(Value::Null),
+
+        _ => Err(anyhow!("cast_float() expects one argument")),
+    }
+}
+
+fn cast_bool(arguments: Vec<Value>) -> Result<Value> {
+    match arguments.as_slice() {
+        [Value::Boolean(v)] => Ok(Value::Boolean(*v)),
+
+        [Value::Int64(v)] => Ok(Value::Boolean(*v != 0)),
+
+        [Value::Float64(v)] => Ok(Value::Boolean(*v != 0.0)),
+
+        [Value::String(v)] => v.parse::<bool>().map(Value::Boolean).map_err(Into::into),
+
+        [Value::Null] => Ok(Value::Null),
+
+        _ => Err(anyhow!("cast_bool() expects one argument")),
+    }
+}
+
+fn cast_string(arguments: Vec<Value>) -> Result<Value> {
+    match arguments.as_slice() {
+        [Value::String(v)] => Ok(Value::String(v.clone())),
+
+        [Value::Null] => Ok(Value::Null),
+
+        [value] => Ok(Value::String(value.to_string())),
+
+        _ => Err(anyhow!("cast_string() expects one argument")),
+    }
 }

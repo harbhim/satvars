@@ -1,42 +1,65 @@
-mod employee_validation;
-mod required_field_validator;
+mod config;
+
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
+use clap::{Parser, Subcommand};
 
-use employee_validation::EmployeeValidationStage;
-use required_field_validator::RequiredFieldValidator;
+use config::PipelineConfig;
+use satva_core::PipelineOptions;
 
-use satva_core::{PipelineOptions, RenameFieldStage, SchemaValidation, Source, pipeline::Pipeline};
-use satva_types::Schema;
+#[derive(Parser)]
+#[command(
+    name = "satva",
+    version,
+    about = "Run Satva data pipelines from a config file"
+)]
+struct Cli {
+    #[command(subcommand)]
+    command: Command,
+}
 
-use satva_io::sink::JsonSink;
-use satva_io::source::JsonSource;
+#[derive(Subcommand)]
+enum Command {
+    /// Run a pipeline defined in a YAML config file.
+    Run {
+        /// Path to the pipeline config (YAML).
+        #[arg(short, long)]
+        config: PathBuf,
+    },
+}
 
 fn main() -> Result<()> {
-    let source = JsonSource::new("employees.jsonl");
+    let cli = Cli::parse();
 
-    let sample = source.read_sample(1000)?;
-    let schema = Schema::infer(&sample);
+    match cli.command {
+        // Passed as a reference (`&config`) so the `PathBuf` correctly coerces to `&Path`
+        Command::Run { config } => run(&config),
+    }
+}
 
-    println!("Detected schema:");
-    println!("{schema:#?}");
+fn run(config_path: &Path) -> Result<()> {
+    // `config_path` is already a `&Path`, so taking another reference (`&config_path`)
+    // creates a `&&Path`, which triggers a Clippy warning.
+    let config = PipelineConfig::load(config_path)?;
+    let (mut pipeline, schema) = config.build()?;
 
-    let sink = Box::new(JsonSink::new("cleaned_employees.jsonl"));
+    if let Some(schema) = schema {
+        println!("Inferred schema:");
+        println!("{schema:#?}\n");
+    }
 
-    let mut pipeline = Pipeline::new(Box::new(source));
+    let result = pipeline.run(PipelineOptions::new())?;
 
-    pipeline.add_stage(Box::new(RequiredFieldValidator::new("first_name")));
-    pipeline.add_stage(Box::new(RequiredFieldValidator::new("department")));
-    pipeline.add_stage(Box::new(SchemaValidation::new(schema)));
-    pipeline.add_stage(Box::new(EmployeeValidationStage));
-    pipeline.add_stage(Box::new(RenameFieldStage::new("education", "edu")));
+    println!("Pipeline summary:");
+    println!("{:#?}", result.summary);
 
-    pipeline.set_sink(sink);
-
-    let summary = pipeline.run(PipelineOptions::new())?;
-
-    println!("\nPipeline Summary:");
-    println!("{summary:#?}");
+    if !result.logs.is_empty() {
+        println!("\nLogs:");
+        for log in &result.logs {
+            println!("{log:?}");
+        }
+    }
 
     Ok(())
 }

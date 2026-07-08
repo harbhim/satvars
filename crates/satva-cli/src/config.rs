@@ -11,28 +11,6 @@ use satva_io::sink::{CsvSink, JsonSink};
 use satva_io::source::{CsvSource, JsonSource};
 use satva_types::Schema;
 
-/// Top-level shape of a pipeline config file.
-///
-/// Example:
-///
-/// ```yaml
-/// source:
-///   type: json
-///   path: employees.jsonl
-///
-/// sink:
-///   type: json
-///   path: cleaned_employees.jsonl
-///
-/// schema:
-///   infer: true
-///
-/// stages:
-///   - type: schema_validation
-///   - type: rename_field
-///     from: education
-///     to: edu
-/// ```
 #[derive(Debug, Deserialize)]
 pub struct PipelineConfig {
     pub source: SourceConfig,

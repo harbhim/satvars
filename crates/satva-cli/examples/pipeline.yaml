@@ -17,6 +17,8 @@ stages:
   - type: rename_field
     from: education
     to: edu
+  - type: select_fields
+    fields: [employee_id, first_name, edu]
 
 # Not runnable yet — needs the satva-parser milestone:
 #  - type: filter

@@ -1,8 +1,10 @@
 [package]
-name = "satva-expr"
+name = "satva-types"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-satva-types = { path = "../satva-types" }
 anyhow.workspace = true
+
+[lints]
+workspace = true

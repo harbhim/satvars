@@ -1,0 +1,25 @@
+# Example pipeline config for `satva run --config examples/pipeline.yaml`.
+
+source:
+  type: json
+  path: employees.jsonl
+
+sink:
+  type: json
+  path: cleaned_employees.jsonl
+
+schema:
+  infer: true
+  sample_size: 1000
+
+stages:
+  - type: schema_validation
+  - type: rename_field
+    from: education
+    to: edu
+  - type: select_fields
+    fields: [employee_id, first_name, edu]
+
+# Not runnable yet — needs the satva-parser milestone:
+#  - type: filter
+#    expression: "salary > 50000 && department == \"HR\""

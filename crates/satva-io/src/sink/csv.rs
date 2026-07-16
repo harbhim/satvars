@@ -24,8 +24,7 @@ impl CsvSink {
 impl Sink for CsvSink {
     fn write(&mut self, record: &Record) -> Result<()> {
         if self.headers.is_none() {
-            let mut headers = record.fields.keys().cloned().collect::<Vec<_>>();
-            headers.sort();
+            let headers = record.keys().cloned().collect::<Vec<_>>();
             self.headers = Some(headers);
         }
 
@@ -44,7 +43,6 @@ impl Sink for CsvSink {
             .iter()
             .map(|header| {
                 record
-                    .fields
                     .get(header)
                     .map(std::string::ToString::to_string)
                     .unwrap_or_default()

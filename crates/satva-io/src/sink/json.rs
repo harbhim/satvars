@@ -34,7 +34,7 @@ impl Sink for JsonSink {
     fn write(&mut self, record: &Record) -> Result<()> {
         let mut object = serde_json::Map::new();
 
-        for (key, value) in &record.fields {
+        for (key, value) in record {
             object.insert(key.clone(), to_json_value(value));
         }
 

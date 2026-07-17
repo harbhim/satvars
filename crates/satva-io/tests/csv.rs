@@ -68,7 +68,7 @@ fn csv_sink_writes_headers_and_rows() -> Result<()> {
 
     let output = fs::read_to_string(&path)?;
 
-    assert_eq!(output, "age,name\n31,Asha\n28,Ravi\n");
+    assert_eq!(output, "name,age\nAsha,31\nRavi,28\n");
 
     fs::remove_file(path)?;
 
@@ -89,7 +89,7 @@ fn csv_sink_writes_missing_fields_as_empty_cells() -> Result<()> {
 
     let output = fs::read_to_string(&path)?;
 
-    assert_eq!(output, "age,name\n31,Asha\n,Ravi\n");
+    assert_eq!(output, "name,age\nAsha,31\nRavi,\n");
 
     fs::remove_file(path)?;
 

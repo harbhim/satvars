@@ -73,7 +73,7 @@ impl Schema {
             std::collections::HashMap::new();
 
         for record in records {
-            for (key, value) in &record.fields {
+            for (key, value) in record {
                 if !field_stats.contains_key(key) {
                     field_order.push(key.clone());
                 }
@@ -116,7 +116,7 @@ impl Schema {
                     reason = "avoid let_chains syntax which may not compile on older toolchains"
                 )]
                 if let Some(stats) = field_stats.get_mut(key) {
-                    if !record.fields.contains_key(key) {
+                    if !record.contains_key(key) {
                         stats.nullable = true;
                     }
                 }
@@ -130,6 +130,8 @@ impl Schema {
                     stats.int_count + stats.float_count + stats.bool_count + stats.string_count;
                 let data_type = if total_non_null == 0 {
                     DataType::String
+                } else if stats.float_count > 0 {
+                    DataType::Float64
                 } else if stats.int_count * 2 > total_non_null {
                     DataType::Int64
                 } else if (stats.int_count + stats.float_count) * 2 > total_non_null {

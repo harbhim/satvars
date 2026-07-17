@@ -1,0 +1,29 @@
+[package]
+name = "satva-benchmarks"
+version = "0.1.0"
+edition = "2024"
+
+[lints]
+workspace = true
+
+[dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+satva-expr = { path = "../crates/satva-expr" }
+satva-parser = { path = "../crates/satva-parser" }
+satva-types = { path = "../crates/satva-types" }
+satva-core = { path = "../crates/satva-core" }
+satva-io = { path = "../crates/satva-io" }
+serde_json = "1"
+anyhow.workspace = true
+
+[[bench]]
+name = "parser"
+harness = false
+
+[[bench]]
+name = "evaluator"
+harness = false
+
+[[bench]]
+name = "pipeline"
+harness = false

@@ -23,10 +23,17 @@ impl Evaluator {
             }
 
             Expression::Binary { left, op, right } => {
-                let left = Self::evaluate(left, record)?;
-                let right = Self::evaluate(right, record)?;
+                use BinaryOperator::*;
 
-                Self::evaluate_binary(left, *op, right)
+                match op {
+                    And => Self::evaluate_and(left, right, record),
+                    Or => Self::evaluate_or(left, right, record),
+                    _ => {
+                        let left = Self::evaluate(left, record)?;
+                        let right = Self::evaluate(right, record)?;
+                        Self::evaluate_binary(left, *op, right)
+                    }
+                }
             }
 
             Expression::Function {
@@ -57,6 +64,36 @@ impl Evaluator {
             Function::CastFloat => cast_float(arguments),
             Function::CastBool => cast_bool(arguments),
             Function::CastString => cast_string(arguments),
+        }
+    }
+
+    fn evaluate_and(left: &Expression, right: &Expression, record: &Record) -> Result<Value> {
+        let left = Self::evaluate(left, record)?;
+        match left {
+            Value::Boolean(false) => Ok(Value::Boolean(false)),
+            Value::Boolean(true) => {
+                let right = Self::evaluate(right, record)?;
+                match right {
+                    Value::Boolean(v) => Ok(Value::Boolean(v)),
+                    _ => Err(anyhow!("AND requires booleans")),
+                }
+            }
+            _ => Err(anyhow!("AND requires booleans")),
+        }
+    }
+
+    fn evaluate_or(left: &Expression, right: &Expression, record: &Record) -> Result<Value> {
+        let left = Self::evaluate(left, record)?;
+        match left {
+            Value::Boolean(true) => Ok(Value::Boolean(true)),
+            Value::Boolean(false) => {
+                let right = Self::evaluate(right, record)?;
+                match right {
+                    Value::Boolean(v) => Ok(Value::Boolean(v)),
+                    _ => Err(anyhow!("OR requires booleans")),
+                }
+            }
+            _ => Err(anyhow!("OR requires booleans")),
         }
     }
 
@@ -101,15 +138,7 @@ impl Evaluator {
 
             LessThanOrEqual => compare(left, right, |o| o.is_le()),
 
-            And => match (left, right) {
-                (Value::Boolean(a), Value::Boolean(b)) => Ok(Value::Boolean(a && b)),
-                _ => Err(anyhow!("AND requires booleans")),
-            },
-
-            Or => match (left, right) {
-                (Value::Boolean(a), Value::Boolean(b)) => Ok(Value::Boolean(a || b)),
-                _ => Err(anyhow!("OR requires booleans")),
-            },
+            And | Or => unreachable!("And/Or are handled in evaluate()"),
         }
     }
 }
@@ -147,9 +176,19 @@ fn compare(
             .partial_cmp(&b)
             .ok_or_else(|| anyhow!("Cannot compare NaN"))?,
 
+        (Value::Int64(a), Value::Float64(b)) => (a as f64)
+            .partial_cmp(&b)
+            .ok_or_else(|| anyhow!("Cannot compare NaN"))?,
+
+        (Value::Float64(a), Value::Int64(b)) => a
+            .partial_cmp(&(b as f64))
+            .ok_or_else(|| anyhow!("Cannot compare NaN"))?,
+
         (Value::String(a), Value::String(b)) => a.cmp(&b),
 
         (Value::Boolean(a), Value::Boolean(b)) => a.cmp(&b),
+
+        (Value::Null, _) | (_, Value::Null) => return Ok(Value::Boolean(false)),
 
         _ => {
             return Err(anyhow!("Cannot compare different value types"));

@@ -26,7 +26,7 @@ impl PipelineStage for SelectFieldsStage {
     }
 
     fn execute(&self, record: &mut Record, _ctx: &StageContext) -> StageResult {
-        record.fields.retain(|field, _| self.fields.contains(field));
+        record.retain(|field, _| self.fields.contains(field));
 
         StageResult::continue_()
     }

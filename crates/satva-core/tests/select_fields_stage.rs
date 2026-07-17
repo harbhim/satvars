@@ -53,7 +53,7 @@ fn removes_everything_when_selection_is_empty() {
 
     assert!(matches!(result, StageResult::Continue));
 
-    assert!(record.fields.is_empty());
+    assert!(record.is_empty());
 }
 
 #[test]
@@ -69,7 +69,7 @@ fn keeps_all_requested_fields() {
 
     assert!(matches!(result, StageResult::Continue));
 
-    assert_eq!(record.fields.len(), 3);
+    assert_eq!(record.len(), 3);
 }
 
 #[test]

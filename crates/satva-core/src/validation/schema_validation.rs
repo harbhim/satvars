@@ -31,11 +31,18 @@ impl SchemaValidation {
                 Ok(Value::Null)
             }
             DataType::String => {
-                if let Value::String(_) = value {
-                    Ok(value.clone())
+                let coerced = if let Value::String(s) = value {
+                    s.clone()
                 } else {
-                    Ok(Value::String(value.to_string()))
+                    value.to_string()
+                };
+                if coerced.is_empty() && !is_nullable {
+                    return Err(StageError::execution(
+                        self.name(),
+                        format!("Field '{key}' is not nullable but got empty string"),
+                    ));
                 }
+                Ok(Value::String(coerced))
             }
             DataType::Int64 => self.coerce_int64(value, is_nullable, key),
             DataType::Float64 => self.coerce_float64(value, is_nullable, key),

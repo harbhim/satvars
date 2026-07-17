@@ -249,7 +249,9 @@ fn or_does_not_short_circuit_on_false_left() {
 #[test]
 fn and_short_circuit_protects_null_check() {
     // is_not_null(age) && age > 5 — if age is null, short-circuit prevents comparison
-    let expr = field("age").is_not_null().and(field("age").greater_than(lit(5)));
+    let expr = field("age")
+        .is_not_null()
+        .and(field("age").greater_than(lit(5)));
     let result = Evaluator::evaluate(&expr, &record_with_nulls());
     assert_eq!(result.unwrap(), Value::Boolean(false));
 }

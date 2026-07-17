@@ -54,13 +54,19 @@ fn func(function: Function, arguments: Vec<Expression>) -> Expression {
 fn parse_int_literal() {
     assert_eq!(parse_expression("42").unwrap(), lit_i(42));
     assert_eq!(parse_expression("0").unwrap(), lit_i(0));
-    assert_eq!(parse_expression("-5").unwrap(), unary(UnaryOperator::Negate, lit_i(5)));
+    assert_eq!(
+        parse_expression("-5").unwrap(),
+        unary(UnaryOperator::Negate, lit_i(5))
+    );
 }
 
 #[test]
 fn parse_float_literal() {
     assert_eq!(parse_expression("2.5").unwrap(), lit_f(2.5));
-    assert_eq!(parse_expression("-2.5").unwrap(), unary(UnaryOperator::Negate, lit_f(2.5)));
+    assert_eq!(
+        parse_expression("-2.5").unwrap(),
+        unary(UnaryOperator::Negate, lit_f(2.5))
+    );
 }
 
 #[test]
@@ -137,7 +143,11 @@ fn parse_modulo() {
 
 #[test]
 fn precedence_multiplication_over_addition() {
-    let expected = bin(field("a"), BinaryOperator::Add, bin(field("b"), BinaryOperator::Multiply, lit_i(3)));
+    let expected = bin(
+        field("a"),
+        BinaryOperator::Add,
+        bin(field("b"), BinaryOperator::Multiply, lit_i(3)),
+    );
     assert_eq!(parse_expression("a + b * 3").unwrap(), expected);
 }
 
@@ -224,11 +234,7 @@ fn parse_and_or() {
     );
     assert_eq!(parse_expression("a > 10 && b == \"x\"").unwrap(), expected);
 
-    let expected = bin(
-        field("flag"),
-        BinaryOperator::Or,
-        field("backup"),
-    );
+    let expected = bin(field("flag"), BinaryOperator::Or, field("backup"));
     assert_eq!(parse_expression("flag || backup").unwrap(), expected);
 }
 
@@ -296,7 +302,10 @@ fn parse_length() {
 fn parse_concat() {
     assert_eq!(
         parse_expression("concat(first, \" \", last)").unwrap(),
-        func(Function::Concat, vec![field("first"), lit_s(" "), field("last")])
+        func(
+            Function::Concat,
+            vec![field("first"), lit_s(" "), field("last")]
+        )
     );
 }
 

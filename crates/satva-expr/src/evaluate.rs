@@ -67,11 +67,7 @@ impl Evaluator {
         }
     }
 
-    fn evaluate_and(
-        left: &Expression,
-        right: &Expression,
-        record: &Record,
-    ) -> Result<Value> {
+    fn evaluate_and(left: &Expression, right: &Expression, record: &Record) -> Result<Value> {
         let left = Self::evaluate(left, record)?;
         match left {
             Value::Boolean(false) => Ok(Value::Boolean(false)),
@@ -86,11 +82,7 @@ impl Evaluator {
         }
     }
 
-    fn evaluate_or(
-        left: &Expression,
-        right: &Expression,
-        record: &Record,
-    ) -> Result<Value> {
+    fn evaluate_or(left: &Expression, right: &Expression, record: &Record) -> Result<Value> {
         let left = Self::evaluate(left, record)?;
         match left {
             Value::Boolean(true) => Ok(Value::Boolean(true)),

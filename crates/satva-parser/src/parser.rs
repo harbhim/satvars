@@ -1,6 +1,4 @@
-use satva_expr::{
-    BinaryOperator, Expression, Function, UnaryOperator,
-};
+use satva_expr::{BinaryOperator, Expression, Function, UnaryOperator};
 use satva_types::Value;
 
 use crate::error::ParseError;
@@ -15,7 +13,9 @@ pub struct Parser {
 impl Parser {
     pub fn new(input: &str) -> Self {
         let mut lexer = Lexer::new(input);
-        let (current, current_pos) = lexer.next_token().unwrap_or((Token::Eof, Position::new(1, 1)));
+        let (current, current_pos) = lexer
+            .next_token()
+            .unwrap_or((Token::Eof, Position::new(1, 1)));
         Self {
             lexer,
             current,
@@ -58,7 +58,11 @@ impl Parser {
         if self.current == *expected {
             self.advance()
         } else {
-            Err(ParseError::expected(expected, &self.current, Some(self.pos())))
+            Err(ParseError::expected(
+                expected,
+                &self.current,
+                Some(self.pos()),
+            ))
         }
     }
 

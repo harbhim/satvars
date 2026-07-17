@@ -1,6 +1,8 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 
-use satva_core::{FilterStage, Pipeline, PipelineOptions, SelectFieldsStage, SetFieldStage, Source};
+use satva_core::{
+    FilterStage, Pipeline, PipelineOptions, SelectFieldsStage, SetFieldStage, Source,
+};
 use satva_expr::{field, lit};
 use satva_types::{Record, Value};
 
@@ -13,14 +15,9 @@ fn make_records(count: usize) -> Vec<Record> {
             record.insert("age", Value::Int64(i64::try_from(20 + (i % 40)).unwrap()));
             record.insert(
                 "department",
-                Value::String(
-                    ["Engineering", "Marketing", "HR", "Sales"][i % 4].to_string(),
-                ),
+                Value::String(["Engineering", "Marketing", "HR", "Sales"][i % 4].to_string()),
             );
-            record.insert(
-                "salary",
-                Value::Float64(30_000.0 + (i as f64 * 500.0)),
-            );
+            record.insert("salary", Value::Float64(30_000.0 + (i as f64 * 500.0)));
             record.insert("name", Value::String(format!("Employee {i}")));
             record.insert("email", Value::String(format!("emp{i}@example.com")));
             record
@@ -34,11 +31,7 @@ struct VecSource {
 
 impl Source for VecSource {
     fn read(&self) -> anyhow::Result<Box<dyn Iterator<Item = anyhow::Result<Record>>>> {
-        let iter = self
-            .records
-            .clone()
-            .into_iter()
-            .map(Ok::<_, anyhow::Error>);
+        let iter = self.records.clone().into_iter().map(Ok::<_, anyhow::Error>);
         Ok(Box::new(iter))
     }
 }
@@ -56,19 +49,17 @@ fn bench_pipeline_simple_filter_1000(c: &mut Criterion) {
             pipeline.add_stage(Box::new(FilterStage::new(expr.clone())));
 
             pipeline.run(PipelineOptions::new()).unwrap();
-        })
+        });
     });
 }
 
 fn bench_pipeline_complex_filter_1000(c: &mut Criterion) {
     let records = make_records(1000);
-    let expr = field("active")
-        .equal_to(lit(true))
-        .and(
-            field("department")
-                .equal_to(lit("Engineering"))
-                .and(field("salary").greater_than_or_equal_to(lit(50_000.0))),
-        );
+    let expr = field("active").equal_to(lit(true)).and(
+        field("department")
+            .equal_to(lit("Engineering"))
+            .and(field("salary").greater_than_or_equal_to(lit(50_000.0))),
+    );
 
     c.bench_function("pipeline_complex_filter_1000", |b| {
         b.iter(|| {
@@ -79,7 +70,7 @@ fn bench_pipeline_complex_filter_1000(c: &mut Criterion) {
             pipeline.add_stage(Box::new(FilterStage::new(expr.clone())));
 
             pipeline.run(PipelineOptions::new()).unwrap();
-        })
+        });
     });
 }
 
@@ -101,10 +92,7 @@ fn bench_pipeline_full_transform_1000(c: &mut Criterion) {
             };
             let mut pipeline = Pipeline::new(Box::new(source));
             pipeline.add_stage(Box::new(FilterStage::new(filter_expr.clone())));
-            pipeline.add_stage(Box::new(SetFieldStage::new(
-                "bonus",
-                bonus_expr.clone(),
-            )));
+            pipeline.add_stage(Box::new(SetFieldStage::new("bonus", bonus_expr.clone())));
             pipeline.add_stage(Box::new(SetFieldStage::new(
                 "display_name",
                 display_expr.clone(),
@@ -119,7 +107,7 @@ fn bench_pipeline_full_transform_1000(c: &mut Criterion) {
             ])));
 
             pipeline.run(PipelineOptions::new()).unwrap();
-        })
+        });
     });
 }
 

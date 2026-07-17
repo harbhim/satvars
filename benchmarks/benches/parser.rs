@@ -4,13 +4,13 @@ use satva_parser::parse_expression;
 
 fn bench_parse_field(c: &mut Criterion) {
     c.bench_function("parse_field", |b| {
-        b.iter(|| parse_expression("salary").unwrap())
+        b.iter(|| parse_expression("salary").unwrap());
     });
 }
 
 fn bench_parse_simple_comparison(c: &mut Criterion) {
     c.bench_function("parse_simple_comparison", |b| {
-        b.iter(|| parse_expression("age > 25").unwrap())
+        b.iter(|| parse_expression("age > 25").unwrap());
     });
 }
 
@@ -23,24 +23,21 @@ fn bench_parse_complex_filter(c: &mut Criterion) {
                  && salary >= 70000",
             )
             .unwrap()
-        })
+        });
     });
 }
 
 fn bench_parse_nested_arithmetic(c: &mut Criterion) {
     c.bench_function("parse_nested_arithmetic", |b| {
-        b.iter(|| parse_expression("(price - discount) * 1.1 + tax").unwrap())
+        b.iter(|| parse_expression("(price - discount) * 1.1 + tax").unwrap());
     });
 }
 
 fn bench_parse_function_call(c: &mut Criterion) {
     c.bench_function("parse_function_call", |b| {
         b.iter(|| {
-            parse_expression(
-                "upper(trim(first_name)) + \" \" + upper(trim(last_name))",
-            )
-            .unwrap()
-        })
+            parse_expression("upper(trim(first_name)) + \" \" + upper(trim(last_name))").unwrap()
+        });
     });
 }
 
@@ -67,7 +64,7 @@ fn bench_parse_multiple_strings(c: &mut Criterion) {
                 }
             },
             BatchSize::SmallInput,
-        )
+        );
     });
 }
 

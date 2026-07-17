@@ -25,7 +25,7 @@ fn bench_evaluate_field_lookup(c: &mut Criterion) {
     let expr = field("salary");
 
     c.bench_function("evaluate_field_lookup", |b| {
-        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap())
+        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap());
     });
 }
 
@@ -34,7 +34,7 @@ fn bench_evaluate_simple_comparison(c: &mut Criterion) {
     let expr = field("age").greater_than(lit(18));
 
     c.bench_function("evaluate_simple_comparison", |b| {
-        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap())
+        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap());
     });
 }
 
@@ -43,7 +43,7 @@ fn bench_evaluate_arithmetic(c: &mut Criterion) {
     let expr = field("salary").plus(field("bonus"));
 
     c.bench_function("evaluate_arithmetic", |b| {
-        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap())
+        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap());
     });
 }
 
@@ -55,22 +55,20 @@ fn bench_evaluate_and_shortcircuit(c: &mut Criterion) {
         .and(field("nonexistent").greater_than(lit(0)));
 
     c.bench_function("evaluate_and_shortcircuit", |b| {
-        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap())
+        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap());
     });
 }
 
 fn bench_evaluate_complex_filter(c: &mut Criterion) {
     let record = make_record();
-    let expr = field("active")
-        .equal_to(lit(true))
-        .and(
-            field("department")
-                .equal_to(lit("Engineering"))
-                .and(field("salary").greater_than_or_equal_to(lit(70_000.0))),
-        );
+    let expr = field("active").equal_to(lit(true)).and(
+        field("department")
+            .equal_to(lit("Engineering"))
+            .and(field("salary").greater_than_or_equal_to(lit(70_000.0))),
+    );
 
     c.bench_function("evaluate_complex_filter", |b| {
-        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap())
+        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap());
     });
 }
 
@@ -79,7 +77,7 @@ fn bench_evaluate_function_chain(c: &mut Criterion) {
     let expr = field("name").upper().trim().length();
 
     c.bench_function("evaluate_function_chain", |b| {
-        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap())
+        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap());
     });
 }
 
@@ -91,7 +89,7 @@ fn bench_evaluate_string_concat(c: &mut Criterion) {
         .plus(field("department"));
 
     c.bench_function("evaluate_string_concat", |b| {
-        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap())
+        b.iter(|| Evaluator::evaluate(&expr, &record).unwrap());
     });
 }
 

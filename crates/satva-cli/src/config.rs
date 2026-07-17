@@ -50,24 +50,12 @@ fn default_sample_size() -> usize {
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum StageConfig {
-    RenameField {
-        from: String,
-        to: String,
-    },
-    SelectFields {
-        fields: Vec<String>,
-    },
-    RemoveField {
-        fields: Vec<String>,
-    },
+    RenameField { from: String, to: String },
+    SelectFields { fields: Vec<String> },
+    RemoveField { fields: Vec<String> },
     SchemaValidation,
-    Filter {
-        expression: String,
-    },
-    SetField {
-        field: String,
-        expression: String,
-    },
+    Filter { expression: String },
+    SetField { field: String, expression: String },
 }
 impl PipelineConfig {
     pub fn load(path: &Path) -> Result<Self> {

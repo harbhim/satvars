@@ -1,0 +1,12 @@
+[package]
+name = "satva-parser"
+version = "0.1.0"
+edition = "2024"
+
+[lints]
+workspace = true
+
+[dependencies]
+satva-expr = { path = "../satva-expr" }
+satva-types = { path = "../satva-types" }
+thiserror.workspace = true

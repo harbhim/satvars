@@ -1,4 +1,7 @@
-# Example pipeline config for `satva run --config examples/pipeline.yaml`.
+# Pipeline demonstrating satva-parser expressions with short-circuit evaluation
+# and null-safe comparisons.
+# Run from workspace root:
+#   cargo run -p satva-cli -- run --config crates/satva-cli/examples/pipeline.yaml
 
 source:
   type: json
@@ -14,12 +17,21 @@ schema:
 
 stages:
   - type: schema_validation
-  - type: rename_field
-    from: education
-    to: edu
-  - type: select_fields
-    fields: [employee_id, first_name, edu]
 
-# Not runnable yet — needs the satva-parser milestone:
-#  - type: filter
-#    expression: "salary > 50000 && department == \"HR\""
+  # Short-circuit && protects against null comparisons:
+  # If is_not_null(salary) is false, salary >= 70000 is never evaluated.
+  - type: filter
+    expression: "is_not_null(salary) && is_not_null(active) && active == true && department == \"Engineering\" && salary >= 70000"
+
+  # Computed bonus
+  - type: set_field
+    field: bonus
+    expression: "salary * 0.15"
+
+  # Upper-cased display name
+  - type: set_field
+    field: display_name
+    expression: "upper(first_name) + \" \" + upper(trim(last_name))"
+
+  - type: select_fields
+    fields: [employee_id, display_name, department, salary, bonus, rating]

@@ -1,11 +1,11 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::{Context, Result, anyhow};
 use serde::Deserialize;
 
 use satva_core::{
-    Pipeline, PipelineStage, RemoveFieldStage, RenameFieldStage, SchemaValidation,
-    SelectFieldsStage, Sink, Source,
+    FilterStage, Pipeline, PipelineStage, RemoveFieldStage, RenameFieldStage, SchemaValidation,
+    SelectFieldsStage, SetFieldStage, Sink, Source,
 };
 use satva_io::sink::{CsvSink, JsonSink};
 use satva_io::source::{CsvSource, JsonSource};
@@ -61,35 +61,14 @@ pub enum StageConfig {
         fields: Vec<String>,
     },
     SchemaValidation,
-    /// Recognized but not runnable yet: needs satva-parser to turn the
-    /// string into an `Expression`. Kept here (rather than left out of the
-    /// enum) so config files can already describe the intent and get a
-    /// clear, actionable error instead of a generic "unknown variant".
-    /// Fields are unread until that milestone wires them into `build_stage`.
-    #[allow(dead_code)]
     Filter {
         expression: String,
     },
-    #[allow(dead_code)]
     SetField {
         field: String,
         expression: String,
     },
 }
-
-impl StageConfig {
-    fn type_name(&self) -> &'static str {
-        match self {
-            StageConfig::RenameField { .. } => "rename_field",
-            StageConfig::SelectFields { .. } => "select_fields",
-            StageConfig::RemoveField { .. } => "remove_field",
-            StageConfig::SchemaValidation => "schema_validation",
-            StageConfig::Filter { .. } => "filter",
-            StageConfig::SetField { .. } => "set_field",
-        }
-    }
-}
-
 impl PipelineConfig {
     pub fn load(path: &Path) -> Result<Self> {
         let text = std::fs::read_to_string(path)
@@ -160,12 +139,16 @@ fn build_stage(config: &StageConfig, schema: Option<&Schema>) -> Result<Box<dyn 
             Box::new(SchemaValidation::new(schema))
         }
 
-        StageConfig::Filter { .. } | StageConfig::SetField { .. } => {
-            bail!(
-                "stage '{}' needs the expression parser (satva-parser), which isn't wired up \
-                 yet — build it in Rust directly for now via PipelineBuilder",
-                config.type_name()
-            )
+        StageConfig::Filter { expression } => {
+            let expr = satva_parser::parse_expression(expression)
+                .map_err(|e| anyhow!("Failed to parse filter expression: {e}"))?;
+            Box::new(FilterStage::new(expr))
+        }
+
+        StageConfig::SetField { field, expression } => {
+            let expr = satva_parser::parse_expression(expression)
+                .map_err(|e| anyhow!("Failed to parse set_field expression: {e}"))?;
+            Box::new(SetFieldStage::new(field.clone(), expr))
         }
     };
 

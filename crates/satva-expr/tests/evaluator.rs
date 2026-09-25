@@ -314,3 +314,39 @@ fn and_with_null_active_skips_gracefully() {
     let result = Evaluator::evaluate(&expr, &record_with_nulls());
     assert_eq!(result.unwrap(), Value::Boolean(false));
 }
+
+#[test]
+fn arithmetic_errors_are_recoverable() {
+    use satva_expr::{Evaluator, lit};
+    let invalid = [
+        lit(i64::MAX).plus(lit(1_i64)),
+        lit(i64::MIN).minus(lit(1_i64)),
+        lit(i64::MAX).times(lit(2_i64)),
+        lit(1_i64).divide_by(lit(0_i64)),
+        lit(i64::MIN).divide_by(lit(-1_i64)),
+        lit(1_i64).modulo(lit(0_i64)),
+        lit(i64::MIN).modulo(lit(-1_i64)),
+        lit(i64::MIN).negate(),
+        lit(1.0).divide_by(lit(0.0)),
+        lit(0.0).divide_by(lit(0.0)),
+        lit(f64::MAX).times(lit(2.0)),
+        lit(1_i64).divide_by(lit(0.0)),
+        lit(1.0).divide_by(lit(0_i64)),
+        lit(f64::NAN).negate(),
+        lit(f64::INFINITY).negate(),
+    ];
+    for expression in invalid {
+        assert!(
+            Evaluator::evaluate(&expression, &satva_types::Record::new()).is_err(),
+            "{expression:?}"
+        );
+    }
+    assert_eq!(
+        Evaluator::evaluate(
+            &lit(7_i64).divide_by(lit(2_i64)),
+            &satva_types::Record::new()
+        )
+        .unwrap(),
+        satva_types::Value::Int64(3)
+    );
+}

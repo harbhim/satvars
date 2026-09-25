@@ -10,7 +10,7 @@ pub mod summary;
 
 pub use builder::PipelineBuilder;
 pub use log::PipelineLog;
-pub use options::PipelineOptions;
+pub use options::{ErrorPolicy, PipelineOptions};
 pub use pipeline::Pipeline;
 pub use run_result::PipelineRunResult;
 pub use runtime::context::StageContext;

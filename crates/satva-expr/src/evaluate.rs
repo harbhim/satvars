@@ -101,9 +101,9 @@ impl Evaluator {
         match (op, value) {
             (UnaryOperator::Not, Value::Boolean(v)) => Ok(Value::Boolean(!v)),
 
-            (UnaryOperator::Negate, Value::Int64(v)) => Ok(Value::Int64(-v)),
+            (UnaryOperator::Negate, Value::Int64(v)) => checked_integer(v.checked_neg()),
 
-            (UnaryOperator::Negate, Value::Float64(v)) => Ok(Value::Float64(-v)),
+            (UnaryOperator::Negate, Value::Float64(v)) => finite_float(-v),
 
             _ => Err(anyhow!("Invalid unary operation")),
         }
@@ -113,16 +113,16 @@ impl Evaluator {
         use BinaryOperator::*;
 
         match op {
-            Add => arithmetic(left, right, |a, b| a + b, |a, b| a + b),
+            Add => arithmetic(left, right, i64::checked_add, |a, b| a + b),
 
-            Subtract => arithmetic(left, right, |a, b| a - b, |a, b| a - b),
+            Subtract => arithmetic(left, right, i64::checked_sub, |a, b| a - b),
 
-            Multiply => arithmetic(left, right, |a, b| a * b, |a, b| a * b),
+            Multiply => arithmetic(left, right, i64::checked_mul, |a, b| a * b),
 
-            Divide => arithmetic(left, right, |a, b| a / b, |a, b| a / b),
+            Divide => arithmetic(left, right, i64::checked_div, |a, b| a / b),
 
             Modulo => match (left, right) {
-                (Value::Int64(a), Value::Int64(b)) => Ok(Value::Int64(a % b)),
+                (Value::Int64(a), Value::Int64(b)) => checked_integer(a.checked_rem(b)),
                 _ => Err(anyhow!("Modulo requires integers")),
             },
 
@@ -143,20 +143,36 @@ impl Evaluator {
     }
 }
 
+fn checked_integer(value: Option<i64>) -> Result<Value> {
+    value
+        .map(Value::Int64)
+        .ok_or_else(|| anyhow!("Integer arithmetic overflow or division by zero"))
+}
+
+fn finite_float(value: f64) -> Result<Value> {
+    if value.is_finite() {
+        Ok(Value::Float64(value))
+    } else {
+        Err(anyhow!(
+            "Floating-point arithmetic produced a non-finite result"
+        ))
+    }
+}
+
 fn arithmetic(
     left: Value,
     right: Value,
-    int_op: impl Fn(i64, i64) -> i64,
+    int_op: impl Fn(i64, i64) -> Option<i64>,
     float_op: impl Fn(f64, f64) -> f64,
 ) -> Result<Value> {
     match (left, right) {
-        (Value::Int64(a), Value::Int64(b)) => Ok(Value::Int64(int_op(a, b))),
+        (Value::Int64(a), Value::Int64(b)) => checked_integer(int_op(a, b)),
 
-        (Value::Float64(a), Value::Float64(b)) => Ok(Value::Float64(float_op(a, b))),
+        (Value::Float64(a), Value::Float64(b)) => finite_float(float_op(a, b)),
 
-        (Value::Int64(a), Value::Float64(b)) => Ok(Value::Float64(float_op(a as f64, b))),
+        (Value::Int64(a), Value::Float64(b)) => finite_float(float_op(a as f64, b)),
 
-        (Value::Float64(a), Value::Int64(b)) => Ok(Value::Float64(float_op(a, b as f64))),
+        (Value::Float64(a), Value::Int64(b)) => finite_float(float_op(a, b as f64)),
 
         (Value::String(a), Value::String(b)) => Ok(Value::String(a + &b)),
 

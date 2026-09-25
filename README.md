@@ -98,3 +98,42 @@ The comprehensive check script, `bash scripts/check.sh`, also runs `cargo audit`
 - [Pipeline configuration](docs/pipeline-config.md)
 - [Expression language](docs/expression-language.md)
 - [Architecture](docs/architecture.md)
+
+### Reliable pipeline completion
+
+`Pipeline::run` calls the sink's fallible `finish()` hook before returning, even
+when a source, stage, or sink write fails. JSON and CSV sinks flush their buffered
+output there. A finish error always makes the run fail. If processing and finishing
+both fail, the returned error chain includes both errors. Custom sinks inherit a
+no-op hook and should override it if they buffer output. Finishing does not roll
+back partial output or guarantee that data has been synced to disk.
+
+Record failures continue by default for compatibility. Integrations that treat
+`Ok` as a successful sync should select `StopOnError`:
+
+```rust,ignore
+use satva_core::{ErrorPolicy, PipelineOptions};
+
+let result = pipeline.run(
+    PipelineOptions::default()
+        .with_error_policy(ErrorPolicy::StopOnError)
+        .with_log_limit(Some(1_000)),
+)?;
+```
+
+`StopOnError` stops at the first stage or sink-write failure and returns its error
+with the record index, even when logs are disabled or full. Intentional skips are
+not failures. With `ErrorPolicy::Continue`, check `result.summary.failed` before
+marking a sync successful. Source errors always stop processing.
+
+By default, only the first 1,000 skipped/failed record logs are retained; summary
+counts still cover every processed record. Use `with_log_limit(Some(n))` to change
+the cap, `with_log_limit(None)` for unlimited logs, or `without_logs()` to disable
+retention. Existing `PipelineOptions` struct literals need
+`..PipelineOptions::default()` to initialize the new fields.
+
+Integer arithmetic now returns evaluation errors for overflow, division or
+remainder by zero, and negation of `i64::MIN`. Floating-point arithmetic (including
+mixed integer/float operations and negation) rejects non-finite results such as
+NaN and infinity. Finite results, including underflow to zero, remain valid. This
+arithmetic rule does not change literal, field, or cast behavior.

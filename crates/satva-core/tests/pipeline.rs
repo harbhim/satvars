@@ -219,6 +219,7 @@ fn collect_logs_false_returns_empty_logs() -> Result<()> {
 
     let result = pipeline.run(PipelineOptions {
         collect_logs: false,
+        ..PipelineOptions::default()
     })?;
 
     assert_eq!(result.summary.failed, 1);
@@ -270,4 +271,178 @@ fn sink_failure_increments_failed_logs_error_and_continues() -> Result<()> {
     }
 
     Ok(())
+}
+
+struct FinishingSink {
+    calls: Arc<AtomicUsize>,
+    fail_write: bool,
+    fail_finish: bool,
+}
+
+impl Sink for FinishingSink {
+    fn write(&mut self, _: &Record) -> Result<()> {
+        if self.fail_write {
+            Err(anyhow!("write failed"))
+        } else {
+            Ok(())
+        }
+    }
+    fn finish(&mut self) -> Result<()> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        if self.fail_finish {
+            Err(anyhow!("flush failed"))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[test]
+fn strict_errors_finish_sink_and_preserve_both_errors_without_logs() {
+    for fail_finish in [false, true] {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let (stage, stage_calls) = TestStage::new(TestStageBehavior::Continue);
+        let mut pipeline = Pipeline::builder()
+            .source(TestSource::new(vec![record_with_id(1), record_with_id(2)]))
+            .stage(stage)
+            .sink(FinishingSink {
+                calls: calls.clone(),
+                fail_write: true,
+                fail_finish,
+            })
+            .build()
+            .unwrap();
+        let error = pipeline
+            .run(
+                PipelineOptions::without_logs()
+                    .with_error_policy(satva_core::ErrorPolicy::StopOnError),
+            )
+            .unwrap_err();
+        let message = format!("{error:#}");
+        assert!(message.contains("write failed"));
+        assert!(message.contains("Record 1 failed"));
+        assert_eq!(message.contains("flush failed"), fail_finish);
+        assert_eq!(stage_calls.load(Ordering::SeqCst), 1);
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
+}
+
+#[test]
+fn finish_errors_fail_even_empty_runs_and_continue_policy() {
+    for records in [vec![], vec![record_with_id(1)]] {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut pipeline = Pipeline::builder()
+            .source(TestSource::new(records))
+            .sink(FinishingSink {
+                calls: calls.clone(),
+                fail_write: false,
+                fail_finish: true,
+            })
+            .build()
+            .unwrap();
+        let error = pipeline.run(PipelineOptions::default()).unwrap_err();
+        assert!(format!("{error:#}").contains("flush failed"));
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
+}
+
+#[test]
+fn strict_stage_failure_stops_without_retained_logs() {
+    let (stage, calls) = TestStage::new(TestStageBehavior::Fail("invalid data"));
+    let mut pipeline = Pipeline::builder()
+        .source(TestSource::new(vec![record_with_id(1), record_with_id(2)]))
+        .stage(stage)
+        .build()
+        .unwrap();
+    let error = pipeline
+        .run(
+            PipelineOptions::default()
+                .with_log_limit(Some(0))
+                .with_error_policy(satva_core::ErrorPolicy::StopOnError),
+        )
+        .unwrap_err();
+    assert!(format!("{error:#}").contains("invalid data"));
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn logs_are_bounded_but_summary_counts_every_record() {
+    for (limit, expected) in [
+        (Some(0), 0),
+        (Some(2), 2),
+        (Some(1_000), 1_000),
+        (None, 1_005),
+    ] {
+        for behavior in [
+            TestStageBehavior::Skip("skip"),
+            TestStageBehavior::Fail("fail"),
+        ] {
+            let (stage, _) = TestStage::new(behavior);
+            let mut pipeline = Pipeline::builder()
+                .source(TestSource::new(vec![record_with_id(1); 1_005]))
+                .stage(stage)
+                .build()
+                .unwrap();
+            let result = pipeline
+                .run(PipelineOptions::default().with_log_limit(limit))
+                .unwrap();
+            assert_eq!(result.logs.len(), expected);
+            assert_eq!(result.summary.processed, 1_005);
+            assert_eq!(result.summary.failed + result.summary.skipped, 1_005);
+        }
+    }
+}
+
+struct BrokenSource {
+    fail_open: bool,
+}
+impl Source for BrokenSource {
+    fn read(&self) -> Result<Box<dyn Iterator<Item = Result<Record>>>> {
+        if self.fail_open {
+            return Err(anyhow!("source failed"));
+        }
+        Ok(Box::new(
+            vec![Ok(record_with_id(1)), Err(anyhow!("source failed"))].into_iter(),
+        ))
+    }
+}
+
+#[test]
+fn source_errors_still_finish_sink() {
+    for fail_open in [false, true] {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let mut pipeline = Pipeline::builder()
+            .source(BrokenSource { fail_open })
+            .sink(FinishingSink {
+                calls: calls.clone(),
+                fail_write: false,
+                fail_finish: false,
+            })
+            .build()
+            .unwrap();
+        assert!(pipeline.run(PipelineOptions::default()).is_err());
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+    }
+}
+
+#[test]
+fn continue_policy_counts_all_sink_failures_and_finishes() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let mut pipeline = Pipeline::builder()
+        .source(TestSource::new(vec![record_with_id(1); 3]))
+        .sink(FinishingSink {
+            calls: calls.clone(),
+            fail_write: true,
+            fail_finish: false,
+        })
+        .build()
+        .unwrap();
+    let result = pipeline
+        .run(PipelineOptions::default().with_log_limit(Some(1)))
+        .unwrap();
+    assert_eq!(result.summary.processed, 3);
+    assert_eq!(result.summary.failed, 3);
+    assert_eq!(result.summary.succeeded, 0);
+    assert_eq!(result.logs.len(), 1);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
 }

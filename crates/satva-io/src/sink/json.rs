@@ -31,6 +31,13 @@ impl JsonSink {
 }
 
 impl Sink for JsonSink {
+    fn finish(&mut self) -> Result<()> {
+        if let Some(writer) = self.writer.as_mut() {
+            writer.flush()?;
+        }
+        Ok(())
+    }
+
     fn write(&mut self, record: &Record) -> Result<()> {
         let mut object = serde_json::Map::new();
 

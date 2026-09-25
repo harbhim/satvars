@@ -1,11 +1,11 @@
 use super::builder::PipelineBuilder;
 use super::{
-    PipelineLog, PipelineOptions, PipelineRunResult, PipelineStage, PipelineSummary, StageContext,
-    StageError, StageExecutor, StageResult,
+    ErrorPolicy, PipelineLog, PipelineOptions, PipelineRunResult, PipelineStage, PipelineSummary,
+    StageContext, StageError, StageExecutor, StageResult,
 };
 use crate::Sink;
 use crate::source::Source;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use satva_types::Record;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -17,11 +17,15 @@ enum RecordOutcome {
 
 struct RecordExecutionResult {
     outcome: RecordOutcome,
+    error: Option<anyhow::Error>,
 }
 
 impl RecordExecutionResult {
     fn new(outcome: RecordOutcome) -> Self {
-        Self { outcome }
+        Self {
+            outcome,
+            error: None,
+        }
     }
 }
 
@@ -54,25 +58,38 @@ impl Pipeline {
     }
 
     pub fn run(&mut self, options: PipelineOptions) -> Result<PipelineRunResult> {
-        let records = self.source.read()?;
+        let result = self.run_records(options);
+        let finished = self
+            .sink
+            .as_mut()
+            .map_or(Ok(()), |sink| sink.finish())
+            .context("Failed to finish sink");
+        match (result, finished) {
+            (Ok(result), Ok(())) => Ok(result),
+            (Err(error), Ok(())) | (Ok(_), Err(error)) => Err(error),
+            (Err(error), Err(finish_error)) => Err(error.context(format!("{finish_error:#}"))),
+        }
+    }
 
+    fn run_records(&mut self, options: PipelineOptions) -> Result<PipelineRunResult> {
+        let records = self.source.read()?;
         let mut summary = PipelineSummary::default();
         let mut logs = Vec::new();
-
         for (index, record_result) in records.enumerate() {
             let record = record_result?;
-
             summary.record_processed();
-
             let result = self.process_record(record, index + 1, options, &mut logs);
-
             match result.outcome {
                 RecordOutcome::Succeeded => summary.record_succeeded(),
                 RecordOutcome::Skipped => summary.record_skipped(),
                 RecordOutcome::Failed => summary.record_failed(),
             }
+            if options.error_policy == ErrorPolicy::StopOnError
+                && let Some(error) = result.error
+            {
+                return Err(error.context(format!("Record {} failed", index + 1)));
+            }
         }
-
         Ok(PipelineRunResult { summary, logs })
     }
 
@@ -96,9 +113,12 @@ impl Pipeline {
             }
 
             StageResult::Fail { error } => {
-                Self::log_stage_failure(options, logs, record_index, error);
+                Self::log_stage_failure(options, logs, record_index, error.clone());
 
-                RecordExecutionResult::new(RecordOutcome::Failed)
+                RecordExecutionResult {
+                    outcome: RecordOutcome::Failed,
+                    error: Some(error.into()),
+                }
             }
         }
     }
@@ -117,7 +137,10 @@ impl Pipeline {
                 Err(error) => {
                     Self::log_sink_failure(options, logs, record_index, error.to_string());
 
-                    RecordExecutionResult::new(RecordOutcome::Failed)
+                    RecordExecutionResult {
+                        outcome: RecordOutcome::Failed,
+                        error: Some(error),
+                    }
                 }
             }
         } else {
@@ -132,7 +155,7 @@ impl Pipeline {
         stage: &'static str,
         reason: String,
     ) {
-        if options.collect_logs() {
+        if options.should_log(logs.len()) {
             logs.push(PipelineLog::Skipped {
                 record_index,
                 stage,
@@ -147,7 +170,7 @@ impl Pipeline {
         record_index: usize,
         error: StageError,
     ) {
-        if options.collect_logs() {
+        if options.should_log(logs.len()) {
             logs.push(PipelineLog::StageFailed {
                 record_index,
                 error,
@@ -161,7 +184,7 @@ impl Pipeline {
         record_index: usize,
         message: String,
     ) {
-        if options.collect_logs() {
+        if options.should_log(logs.len()) {
             logs.push(PipelineLog::SinkFailed {
                 record_index,
                 message,

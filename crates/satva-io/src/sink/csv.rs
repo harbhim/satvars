@@ -22,6 +22,13 @@ impl CsvSink {
 }
 
 impl Sink for CsvSink {
+    fn finish(&mut self) -> Result<()> {
+        if let Some(writer) = self.writer.as_mut() {
+            writer.flush()?;
+        }
+        Ok(())
+    }
+
     fn write(&mut self, record: &Record) -> Result<()> {
         if self.headers.is_none() {
             let headers = record.keys().cloned().collect::<Vec<_>>();

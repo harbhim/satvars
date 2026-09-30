@@ -2,5 +2,16 @@
 name = "satva-python"
 version = "0.1.0"
 edition = "2024"
+description = "Python bindings for Satva pipelines"
+
+[lib]
+name = "satva"
+crate-type = ["cdylib"]
+
+[lints]
+workspace = true
 
 [dependencies]
+pyo3 = "0.26"
+satva-core = { path = "../satva-core" }
+satva-runner = { path = "../satva-runner" }

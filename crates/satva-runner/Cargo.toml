@@ -1,0 +1,17 @@
+[package]
+name = "satva-runner"
+version = "0.1.0"
+edition = "2024"
+description = "Load and run Satva pipelines from YAML"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow.workspace = true
+serde.workspace = true
+serde_yaml = "0.9"
+satva-core = { path = "../satva-core" }
+satva-io = { path = "../satva-io" }
+satva-parser = { path = "../satva-parser" }
+satva-types = { path = "../satva-types" }

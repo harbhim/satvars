@@ -1,12 +1,9 @@
-mod config;
-
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-
-use config::PipelineConfig;
 use satva_core::PipelineOptions;
+use satva_runner::run_yaml;
 
 #[derive(Parser)]
 #[command(
@@ -33,30 +30,24 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        // Passed as a reference (`&config`) so the `PathBuf` correctly coerces to `&Path`
         Command::Run { config } => run(&config),
     }
 }
 
 fn run(config_path: &Path) -> Result<()> {
-    // `config_path` is already a `&Path`, so taking another reference (`&config_path`)
-    // creates a `&&Path`, which triggers a Clippy warning.
-    let config = PipelineConfig::load(config_path)?;
-    let (mut pipeline, schema) = config.build()?;
+    let report = run_yaml(config_path, PipelineOptions::new())?;
 
-    if let Some(schema) = schema {
+    if let Some(schema) = report.schema {
         println!("Inferred schema:");
         println!("{schema:#?}\n");
     }
 
-    let result = pipeline.run(PipelineOptions::new())?;
-
     println!("Pipeline summary:");
-    println!("{:#?}", result.summary);
+    println!("{:#?}", report.summary);
 
-    if !result.logs.is_empty() {
+    if !report.logs.is_empty() {
         println!("\nLogs:");
-        for log in &result.logs {
+        for log in &report.logs {
             println!("{log:?}");
         }
     }

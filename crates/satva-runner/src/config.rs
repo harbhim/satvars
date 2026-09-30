@@ -57,6 +57,7 @@ pub enum StageConfig {
     Filter { expression: String },
     SetField { field: String, expression: String },
 }
+
 impl PipelineConfig {
     pub fn load(path: &Path) -> Result<Self> {
         let text = std::fs::read_to_string(path)

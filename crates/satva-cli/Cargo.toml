@@ -8,10 +8,6 @@ workspace = true
 
 [dependencies]
 satva-core = { path = "../satva-core" }
-satva-io = { path = "../satva-io"}
-satva-types = { path = "../satva-types"}
-satva-parser = { path = "../satva-parser" }
+satva-runner = { path = "../satva-runner" }
 anyhow.workspace = true
 clap = { version = "4", features = ["derive"] }
-serde.workspace = true
-serde_yaml = "0.9"

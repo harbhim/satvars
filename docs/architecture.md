@@ -10,23 +10,26 @@ satva-expr           — Expression tree + evaluator (field > 18, upper(name), e
 satva-parser         — String-to-Expression parser ("salary >= 50000")
 satva-core           — Pipeline orchestration, stage trait, built-in stages
 satva-io             — Source/sink implementations (CSV, JSONL)
-satva-cli            — CLI binary driven by YAML config
+satva-runner         — YAML config load and pipeline run
+satva-cli            — CLI binary over satva-runner
 satva-execution      — Parallel execution over columnar batches
 satva-arrow          — Columnar batches and vectorized filter, select, and computed fields
-satva-python         — (stub) Future PyO3 bindings
+satva-python         — PyO3 bindings over satva-runner (`satva.run`)
 ```
 
 ## Dependency Flow
 
 ```
 satva-types (no deps on other satva crates)
-  ^--- satva-expr
-  ^--- satva-parser
+  ^--- satva-expr ^--- satva-parser
   ^--- satva-arrow
-  ^--- satva-core ----^--- satva-io
-                   ^--- satva-cli
-                   ^--- satva-execution
+  ^--- satva-core ^--- satva-io
+               ^--- satva-execution
+               ^--- satva-runner ^--- satva-cli
+                             ^--- satva-python
 ```
+
+`satva-runner` also depends on `satva-parser`. `satva-cli` and `satva-python` also depend on `satva-core` for run options.
 
 ## Core Concepts
 

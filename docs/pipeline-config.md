@@ -6,11 +6,11 @@ Pipeline configs are YAML files that define a source, optional sink, schema infe
 
 ```yaml
 source:
-  type: json          # or: csv
+  type: json          # json, json_array, csv, tsv, parquet, excel
   path: input.jsonl
 
 sink:
-  type: json          # or: csv
+  type: json          # json, json_array, csv, tsv, parquet, excel
   path: output.jsonl
 
 schema:
@@ -48,9 +48,32 @@ Reads JSONL (one JSON object per line). JSON types are mapped to satva types as 
 | null | Null |
 | array / object | String (serialized) |
 
+### JSON Array Source
+
+Reads one JSON file whose top-level value is an array of objects. Scalar mapping matches the JSONL source.
+
 ### CSV Source
 
 Reads CSV with a header row. **All values are read as strings.** Type coercion happens later if a `schema_validation` stage is configured.
+
+### TSV Source
+
+Reads tab-separated values with a header row. Cell values are strings, same as CSV.
+
+### Parquet Source
+
+Reads a Parquet file. Integers become `Int64`, floats become `Float64`, booleans stay booleans, and strings stay strings. Dates, timestamps, and dictionary-encoded columns are read as strings.
+
+### Excel Source
+
+Reads `.xlsx`, `.xls`, or `.ods`. The first row is the header. Typed cells become integers, floats, booleans, or strings. Dates are strings. Empty cells are null.
+
+```yaml
+source:
+  type: excel
+  path: employees.xlsx
+  sheet: People   # optional; defaults to the first worksheet
+```
 
 ## Sink
 
@@ -58,9 +81,32 @@ Reads CSV with a header row. **All values are read as strings.** Type coercion h
 
 Writes JSONL. Field order follows insertion order (preserved from source or stage reordering).
 
+### JSON Array Sink
+
+Writes one JSON array. `finish` closes the array, and a run that writes nothing still produces `[]`.
+
 ### CSV Sink
 
 Writes CSV with a header row. Column order follows the first record's field order.
+
+### TSV Sink
+
+Writes tab-separated values. Column order follows the first record, same as CSV.
+
+### Parquet Sink
+
+Writes an uncompressed Parquet file. Rows are buffered until `finish`. Columns come from the first record. A later float widens an integer column. Missing fields are null, and extra fields are dropped.
+
+### Excel Sink
+
+Writes an `.xlsx` workbook, buffered until `finish`. Columns come from the first record. Missing fields are blank, and extra fields are dropped. Integers and floats are Excel numbers.
+
+```yaml
+sink:
+  type: excel
+  path: cleaned.xlsx
+  sheet: People   # optional; defaults to Sheet1
+```
 
 ## Schema
 

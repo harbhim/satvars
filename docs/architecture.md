@@ -9,7 +9,7 @@ satva-types          — Core types: Record, Value, Schema, Field, DataType
 satva-expr           — Expression tree + evaluator (field > 18, upper(name), etc.)
 satva-parser         — String-to-Expression parser ("salary >= 50000")
 satva-core           — Pipeline orchestration, stage trait, built-in stages
-satva-io             — Source/sink implementations (CSV, JSONL)
+satva-io             — Source/sink implementations (CSV, TSV, JSONL, JSON array, Parquet, Excel)
 satva-runner         — YAML config load and pipeline run
 satva-cli            — CLI binary over satva-runner
 satva-execution      — Parallel execution over columnar batches

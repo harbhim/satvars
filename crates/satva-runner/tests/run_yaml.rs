@@ -73,6 +73,31 @@ fn run_yaml_filters_and_writes_the_sink() {
 }
 
 #[test]
+fn run_yaml_reads_tsv_and_writes_json_array() {
+    let dir = TempDir::new();
+    let input = dir.path().join("input.tsv");
+    let output = dir.path().join("output.json");
+    fs::write(&input, "name\tage\nAda\t36\nBen\t41\n").expect("write input");
+    let config = dir.path().join("pipeline.yaml");
+    fs::write(
+        &config,
+        format!(
+            "source:\n  type: tsv\n  path: {}\nsink:\n  type: json_array\n  path: {}\nstages:\n  - type: filter\n    expression: 'age == \"36\"'\n",
+            input.display(),
+            output.display(),
+        ),
+    )
+    .expect("write config");
+
+    let report = run_yaml(&config, PipelineOptions::new()).expect("run");
+    assert_eq!(report.summary.succeeded, 1);
+
+    let written = fs::read_to_string(output).expect("read output");
+    assert!(written.contains("Ada"));
+    assert!(!written.contains("Ben"));
+}
+
+#[test]
 fn run_yaml_stop_on_error_returns_the_record_failure() {
     let dir = TempDir::new();
     let config = write_pipeline(

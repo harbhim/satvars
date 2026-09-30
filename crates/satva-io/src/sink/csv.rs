@@ -7,14 +7,20 @@ use std::path::PathBuf;
 
 pub struct CsvSink {
     path: PathBuf,
+    delimiter: u8,
     writer: Option<csv::Writer<File>>,
     headers: Option<Vec<String>>,
 }
 
 impl CsvSink {
     pub fn new(path: impl Into<PathBuf>) -> Self {
+        Self::with_delimiter(path, b',')
+    }
+
+    pub fn with_delimiter(path: impl Into<PathBuf>, delimiter: u8) -> Self {
         Self {
             path: path.into(),
+            delimiter,
             writer: None,
             headers: None,
         }
@@ -41,7 +47,9 @@ impl Sink for CsvSink {
             .ok_or_else(|| anyhow::anyhow!("Headers not initialized"))?;
 
         if self.writer.is_none() {
-            let mut writer = csv::Writer::from_path(&self.path)?;
+            let mut writer = csv::WriterBuilder::new()
+                .delimiter(self.delimiter)
+                .from_path(&self.path)?;
             writer.write_record(headers)?;
             self.writer = Some(writer);
         }

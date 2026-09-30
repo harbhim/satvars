@@ -7,8 +7,10 @@ use satva_core::{
     FilterStage, Pipeline, PipelineStage, RemoveFieldStage, RenameFieldStage, SchemaValidation,
     SelectFieldsStage, SetFieldStage, Sink, Source,
 };
-use satva_io::sink::{CsvSink, JsonSink};
-use satva_io::source::{CsvSource, JsonSource};
+use satva_io::sink::{CsvSink, ExcelSink, JsonArraySink, JsonSink, ParquetSink, TsvSink};
+use satva_io::source::{
+    CsvSource, ExcelSource, JsonArraySource, JsonSource, ParquetSource, TsvSource,
+};
 use satva_types::Schema;
 
 #[derive(Debug, Deserialize)]
@@ -24,15 +26,51 @@ pub struct PipelineConfig {
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum SourceConfig {
-    Json { path: PathBuf },
-    Csv { path: PathBuf },
+    Json {
+        path: PathBuf,
+    },
+    JsonArray {
+        path: PathBuf,
+    },
+    Csv {
+        path: PathBuf,
+    },
+    Tsv {
+        path: PathBuf,
+    },
+    Parquet {
+        path: PathBuf,
+    },
+    Excel {
+        path: PathBuf,
+        #[serde(default)]
+        sheet: Option<String>,
+    },
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum SinkConfig {
-    Json { path: PathBuf },
-    Csv { path: PathBuf },
+    Json {
+        path: PathBuf,
+    },
+    JsonArray {
+        path: PathBuf,
+    },
+    Csv {
+        path: PathBuf,
+    },
+    Tsv {
+        path: PathBuf,
+    },
+    Parquet {
+        path: PathBuf,
+    },
+    Excel {
+        path: PathBuf,
+        #[serde(default)]
+        sheet: Option<String>,
+    },
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -98,14 +136,28 @@ impl PipelineConfig {
 fn build_source(config: &SourceConfig) -> Box<dyn Source> {
     match config {
         SourceConfig::Json { path } => Box::new(JsonSource::new(path.clone())),
+        SourceConfig::JsonArray { path } => Box::new(JsonArraySource::new(path.clone())),
         SourceConfig::Csv { path } => Box::new(CsvSource::new(path.clone())),
+        SourceConfig::Tsv { path } => Box::new(TsvSource::new(path.clone())),
+        SourceConfig::Parquet { path } => Box::new(ParquetSource::new(path.clone())),
+        SourceConfig::Excel { path, sheet } => Box::new(match sheet {
+            Some(sheet) => ExcelSource::with_sheet(path.clone(), sheet.clone()),
+            None => ExcelSource::new(path.clone()),
+        }),
     }
 }
 
 fn build_sink(config: &SinkConfig) -> Box<dyn Sink> {
     match config {
         SinkConfig::Json { path } => Box::new(JsonSink::new(path.clone())),
+        SinkConfig::JsonArray { path } => Box::new(JsonArraySink::new(path.clone())),
         SinkConfig::Csv { path } => Box::new(CsvSink::new(path.clone())),
+        SinkConfig::Tsv { path } => Box::new(TsvSink::new(path.clone())),
+        SinkConfig::Parquet { path } => Box::new(ParquetSink::new(path.clone())),
+        SinkConfig::Excel { path, sheet } => Box::new(match sheet {
+            Some(sheet) => ExcelSink::with_sheet(path.clone(), sheet.clone()),
+            None => ExcelSink::new(path.clone()),
+        }),
     }
 }
 

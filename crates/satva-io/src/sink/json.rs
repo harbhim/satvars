@@ -56,7 +56,7 @@ impl Sink for JsonSink {
     }
 }
 
-fn to_json_value(value: &Value) -> serde_json::Value {
+pub(crate) fn to_json_value(value: &Value) -> serde_json::Value {
     match value {
         Value::Null => serde_json::Value::Null,
 

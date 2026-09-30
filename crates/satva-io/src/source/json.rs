@@ -45,7 +45,7 @@ impl Source for JsonSource {
     }
 }
 
-fn json_value_to_value(value: &serde_json::Value) -> Value {
+pub(crate) fn json_value_to_value(value: &serde_json::Value) -> Value {
     match value {
         serde_json::Value::Null => Value::Null,
 

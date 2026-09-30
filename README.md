@@ -1,10 +1,10 @@
 # Satva
 
-Satva is a data pipeline engine written in Rust. It reads CSV or JSONL, runs validation and transformation stages, and writes CSV or JSONL. Each record continues, is skipped, or fails. The same YAML config runs from the command line, from Rust, and from Python.
+Satva is a data pipeline engine written in Rust. It reads CSV, TSV, JSONL, JSON arrays, Parquet, or Excel, runs validation and transformation stages, and writes the same formats. Each record continues, is skipped, or fails. The same YAML config runs from the command line, from Rust, and from Python.
 
 ## Features
 
-- CSV and JSONL sources and sinks.
+- CSV, TSV, JSONL, JSON array, Parquet, and Excel sources and sinks.
 - Schema inference and validation with type coercion.
 - Filter, computed fields, rename, select, and remove stages.
 - An expression language with arithmetic, comparisons, short-circuit boolean operators, and built-in functions (`upper`, `lower`, `trim`, `length`, `concat`, `coalesce`, `is_null`, `is_not_null`, and casts).
@@ -52,7 +52,7 @@ cat tmp/output.jsonl
 
 The output contains Ada's record with a bonus of `12000.0`. Ben's record is filtered out. The CLI prints a pipeline summary and any logs.
 
-File paths in the YAML configuration are relative to the process working directory. The `json` format is JSONL: one JSON object per line. CSV inputs are read as strings. Use schema inference and a `schema_validation` stage when those strings need to be coerced.
+File paths in the YAML configuration are relative to the process working directory. The `json` format is JSONL: one JSON object per line. `json_array` is one JSON array of objects. CSV and TSV inputs are read as strings. Use schema inference and a `schema_validation` stage when those strings need to be coerced. Parquet and Excel sinks buffer rows until the run finishes.
 
 A more detailed [employee pipeline](crates/satva-cli/examples/pipeline.yaml) demonstrates schema validation and string expressions. It expects an `employees.jsonl` input file, which is not included in the repository.
 
@@ -92,7 +92,7 @@ println!("{:?}", report.summary);
 
 ## Run behavior
 
-`Pipeline::run` calls the sink's `finish()` hook before returning, including when a source, stage, or sink write fails. JSON and CSV sinks flush buffered output there. A finish error fails the run. If processing and finishing both fail, the returned error includes both. Custom sinks inherit a no-op hook and should override it when they buffer output. Finishing does not roll back partial output or sync data to disk.
+`Pipeline::run` calls the sink's `finish()` hook before returning, including when a source, stage, or sink write fails. JSON and CSV sinks flush buffered output there. JSON array, Parquet, and Excel sinks write their buffered result there. A finish error fails the run. If processing and finishing both fail, the returned error includes both. Custom sinks inherit a no-op hook and should override it when they buffer output. Finishing does not roll back partial output or sync data to disk.
 
 Record failures continue by default. A caller that treats `Ok` as a successful sync should use `StopOnError`:
 
@@ -120,7 +120,7 @@ Integer arithmetic returns an evaluation error on overflow, division or remainde
 | `satva-expr` | Expression builders and evaluation |
 | `satva-parser` | Parsing expression strings |
 | `satva-core` | Pipeline orchestration and built-in stages |
-| `satva-io` | CSV and JSONL readers and writers |
+| `satva-io` | CSV, TSV, JSONL, JSON array, Parquet, and Excel readers and writers |
 | `satva-runner` | YAML load and run, shared by the CLI and Python |
 | `satva-cli` | Command-line interface over `satva-runner` |
 | `satva-arrow` | Columnar batches and vectorized kernels |

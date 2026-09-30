@@ -4,6 +4,10 @@ pub use crate::{
     StageResult,
 };
 
+pub use crate::batch::{
+    BatchFilter, BatchPipeline, BatchSink, BatchSource, MemoryBatchSource, RecordSinkAdapter,
+    RecordSourceAdapter, SelectFieldsBatch, SetFieldBatch,
+};
 pub use crate::stages::{
     FilterStage, RemoveFieldStage, RenameFieldStage, SelectFieldsStage, SetFieldStage,
 };

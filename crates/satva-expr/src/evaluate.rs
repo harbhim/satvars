@@ -50,7 +50,7 @@ impl Evaluator {
         }
     }
 
-    fn evaluate_function(function: Function, arguments: Vec<Value>) -> Result<Value> {
+    pub fn evaluate_function(function: Function, arguments: Vec<Value>) -> Result<Value> {
         match function {
             Function::Upper => upper(arguments),
             Function::Lower => lower(arguments),
@@ -97,7 +97,7 @@ impl Evaluator {
         }
     }
 
-    fn evaluate_unary(op: UnaryOperator, value: Value) -> Result<Value> {
+    pub fn evaluate_unary(op: UnaryOperator, value: Value) -> Result<Value> {
         match (op, value) {
             (UnaryOperator::Not, Value::Boolean(v)) => Ok(Value::Boolean(!v)),
 
@@ -109,7 +109,7 @@ impl Evaluator {
         }
     }
 
-    fn evaluate_binary(left: Value, op: BinaryOperator, right: Value) -> Result<Value> {
+    pub fn evaluate_binary(left: Value, op: BinaryOperator, right: Value) -> Result<Value> {
         use BinaryOperator::*;
 
         match op {

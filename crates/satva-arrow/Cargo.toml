@@ -3,4 +3,10 @@ name = "satva-arrow"
 version = "0.1.0"
 edition = "2024"
 
+[lints]
+workspace = true
+
 [dependencies]
+anyhow.workspace = true
+satva-types = { path = "../satva-types" }
+satva-expr = { path = "../satva-expr" }

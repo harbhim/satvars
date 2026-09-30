@@ -1,14 +1,13 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! Columnar batches and vectorized kernels for filter, select, and computed fields.
+//!
+//! Cloning a [`RecordBatch`] shares column storage. Row conversion stays at the
+//! source and sink boundary.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+mod array;
+mod batch;
+mod eval;
+mod kernels;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use array::ColumnArray;
+pub use batch::{Column, DEFAULT_BATCH_SIZE, RecordBatch};
+pub use eval::{filter_batch, select_columns, set_column};

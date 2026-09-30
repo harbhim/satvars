@@ -10,7 +10,7 @@ Satva is a modular data pipeline engine written in Rust. Read records from CSV o
 - An expression language with arithmetic, comparisons, boolean operators, and built-in functions.
 - Pipeline summaries and per-record logs.
 
-Stages currently execute sequentially. The Arrow, parallel execution, and Python crates are placeholders.
+Row stages still run one record at a time. Columnar batches run vectorized filter, select, and computed-field stages, and `satva-execution` applies those stages across batches in parallel. The Python crate remains a placeholder.
 
 ## Quick start
 
@@ -71,8 +71,8 @@ A more detailed [employee pipeline](crates/satva-cli/examples/pipeline.yaml) dem
 | `satva-core` | Pipeline orchestration and built-in stages |
 | `satva-io` | CSV and JSONL readers and writers |
 | `satva-cli` | YAML-driven command-line interface |
-| `satva-arrow` | Placeholder for Arrow interoperability |
-| `satva-execution` | Placeholder for parallel execution |
+| `satva-arrow` | Columnar batches and vectorized kernels |
+| `satva-execution` | Parallel execution over batches |
 | `satva-python` | Placeholder for Python bindings |
 | `satva-benchmarks` | Criterion benchmarks in `benchmarks/` |
 

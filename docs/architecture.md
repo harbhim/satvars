@@ -11,8 +11,8 @@ satva-parser         — String-to-Expression parser ("salary >= 50000")
 satva-core           — Pipeline orchestration, stage trait, built-in stages
 satva-io             — Source/sink implementations (CSV, JSONL)
 satva-cli            — CLI binary driven by YAML config
-satva-execution      — (stub) Future parallel execution engine
-satva-arrow          — (stub) Future Apache Arrow interop
+satva-execution      — Parallel execution over columnar batches
+satva-arrow          — Columnar batches and vectorized filter, select, and computed fields
 satva-python         — (stub) Future PyO3 bindings
 ```
 
@@ -22,8 +22,10 @@ satva-python         — (stub) Future PyO3 bindings
 satva-types (no deps on other satva crates)
   ^--- satva-expr
   ^--- satva-parser
+  ^--- satva-arrow
   ^--- satva-core ----^--- satva-io
                    ^--- satva-cli
+                   ^--- satva-execution
 ```
 
 ## Core Concepts

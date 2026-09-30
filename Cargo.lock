@@ -540,6 +540,11 @@ dependencies = [
 [[package]]
 name = "satva-arrow"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "satva-expr",
+ "satva-types",
+]
 
 [[package]]
 name = "satva-benchmarks"
@@ -547,7 +552,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "criterion",
+ "satva-arrow",
  "satva-core",
+ "satva-execution",
  "satva-expr",
  "satva-io",
  "satva-parser",
@@ -574,6 +581,7 @@ name = "satva-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "satva-arrow",
  "satva-expr",
  "satva-types",
  "thiserror",
@@ -582,6 +590,13 @@ dependencies = [
 [[package]]
 name = "satva-execution"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "rayon",
+ "satva-arrow",
+ "satva-core",
+ "satva-expr",
+]
 
 [[package]]
 name = "satva-expr"

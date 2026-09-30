@@ -1,22 +1,24 @@
-//! Parallel batch execution.
-//!
-//! Batches are transformed independently, then written in source order.
-
 use anyhow::{Context, Result};
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use satva_core::{
-    AppliedBatch, BatchSink, BatchSource, BatchStage, ErrorPolicy, PipelineLog, PipelineOptions,
-    PipelineRunResult, PipelineSummary, SharedStage, apply_stages,
-};
+use satva_arrow::RecordBatch;
 
-/// Applies batch stages across batches on a thread pool, then writes in order.
-pub struct ParallelBatchPipeline {
+use crate::{ErrorPolicy, PipelineLog, PipelineOptions, PipelineRunResult, PipelineSummary};
+
+use super::{BatchSink, BatchSource, BatchStage, SharedStage};
+
+/// Output of one batch stage, including rows removed by filters.
+pub struct AppliedBatch {
+    pub batch: RecordBatch,
+    pub skipped: usize,
+}
+
+/// Runs vectorized stages over each batch, then writes surviving rows in order.
+pub struct BatchPipeline {
     source: Box<dyn BatchSource>,
     stages: Vec<SharedStage>,
     sink: Option<Box<dyn BatchSink>>,
 }
 
-impl ParallelBatchPipeline {
+impl BatchPipeline {
     pub fn new(source: Box<dyn BatchSource>) -> Self {
         Self {
             source,
@@ -27,6 +29,10 @@ impl ParallelBatchPipeline {
 
     pub fn add_stage(&mut self, stage: impl BatchStage + 'static) {
         self.stages.push(std::sync::Arc::new(stage));
+    }
+
+    pub fn stages(&self) -> &[SharedStage] {
+        &self.stages
     }
 
     pub fn set_sink(&mut self, sink: Box<dyn BatchSink>) {
@@ -48,36 +54,24 @@ impl ParallelBatchPipeline {
     }
 
     fn execute(&mut self, options: PipelineOptions) -> Result<PipelineRunResult> {
-        let mut batches = Vec::new();
-        while let Some(batch) = self.source.read_batch()? {
-            batches.push(batch);
-        }
-        let stages = &self.stages;
-        let applied: Result<Vec<AppliedBatch>> = batches
-            .into_par_iter()
-            .map(|batch| apply_stages(batch, stages))
-            .collect();
-        let applied = applied?;
-
         let mut summary = PipelineSummary::default();
         let mut logs = Vec::new();
         let mut failure = None;
-        for batch in applied {
-            summary.add_processed(batch.batch.num_rows() + batch.skipped);
-            summary.add_skipped(batch.skipped);
-            if batch.batch.num_rows() == 0 {
+        while let Some(batch) = self.source.read_batch()? {
+            summary.add_processed(batch.num_rows());
+            let applied = apply_stages(batch, &self.stages)?;
+            summary.add_skipped(applied.skipped);
+            if applied.batch.num_rows() == 0 {
                 continue;
             }
-            match write_one(self.sink.as_mut(), &batch, &options, &mut logs) {
-                Some(error) => {
-                    summary.add_failed(batch.batch.num_rows());
-                    if options.error_policy == ErrorPolicy::StopOnError {
-                        failure =
-                            Some(error.context(format!("Record {} failed", summary.processed)));
-                        break;
-                    }
+            if let Some(error) = write_batch(self.sink.as_mut(), &applied, &options, &mut logs) {
+                summary.add_failed(applied.batch.num_rows());
+                if options.error_policy == ErrorPolicy::StopOnError {
+                    failure = Some(error.context(format!("Record {} failed", summary.processed)));
+                    break;
                 }
-                None => summary.add_succeeded(batch.batch.num_rows()),
+            } else {
+                summary.add_succeeded(applied.batch.num_rows());
             }
         }
         if let Some(error) = failure {
@@ -87,7 +81,21 @@ impl ParallelBatchPipeline {
     }
 }
 
-fn write_one(
+pub fn apply_stages(batch: RecordBatch, stages: &[SharedStage]) -> Result<AppliedBatch> {
+    let mut current = batch;
+    let mut skipped = 0;
+    for stage in stages {
+        let applied = stage.apply(current)?;
+        skipped += applied.skipped;
+        current = applied.batch;
+    }
+    Ok(AppliedBatch {
+        batch: current,
+        skipped,
+    })
+}
+
+pub(crate) fn write_batch(
     sink: Option<&mut Box<dyn BatchSink>>,
     applied: &AppliedBatch,
     options: &PipelineOptions,

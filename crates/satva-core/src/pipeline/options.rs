@@ -52,7 +52,7 @@ impl PipelineOptions {
     pub fn collect_logs(&self) -> bool {
         self.collect_logs
     }
-    pub(crate) fn should_log(&self, count: usize) -> bool {
+    pub fn should_log(&self, count: usize) -> bool {
         self.collect_logs && self.log_limit.is_none_or(|limit| count < limit)
     }
 }

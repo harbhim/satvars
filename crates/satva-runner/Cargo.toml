@@ -1,8 +1,15 @@
 [package]
 name = "satva-runner"
-version = "0.1.0"
-edition = "2024"
 description = "Load and run Satva pipelines from YAML"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+readme.workspace = true
+keywords.workspace = true
 
 [lints]
 workspace = true
@@ -11,7 +18,7 @@ workspace = true
 anyhow.workspace = true
 serde.workspace = true
 serde_yaml = "0.9"
-satva-core = { path = "../satva-core" }
-satva-io = { path = "../satva-io" }
-satva-parser = { path = "../satva-parser" }
-satva-types = { path = "../satva-types" }
+satva-core.workspace = true
+satva-io.workspace = true
+satva-parser.workspace = true
+satva-types.workspace = true

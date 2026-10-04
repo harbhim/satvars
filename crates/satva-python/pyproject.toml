@@ -6,7 +6,29 @@ build-backend = "maturin"
 name = "satva"
 version = "0.1.0"
 description = "Run Satva data pipelines from Python"
+readme = "README.md"
+license = "MIT"
 requires-python = ">=3.9"
+authors = [{ name = "Hardik Bhimani", email = "hardikbhimani@rocketmail.com" }]
+keywords = ["etl", "pipeline", "csv", "parquet", "json"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Rust",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.urls]
+Homepage = "https://github.com/harbhim/satvars"
+Repository = "https://github.com/harbhim/satvars"
+Issues = "https://github.com/harbhim/satvars/issues"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]

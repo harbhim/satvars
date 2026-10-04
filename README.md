@@ -13,13 +13,39 @@ Satva is a data pipeline engine written in Rust. It reads CSV, TSV, JSONL, JSON 
 - A shared YAML runner (`satva-runner`) used by the CLI and the Python extension.
 - Columnar batches with vectorized filter, select, and computed-field stages. `satva-execution` runs those stages across batches in parallel. Row stages still run one record at a time.
 
-## Quick start
+Satva is MIT licensed. Install the command-line tool and Rust libraries from [crates.io](https://crates.io), and the Python package from [PyPI](https://pypi.org). Both registries are free.
 
-Install a current stable Rust toolchain with Cargo and support for the Rust 2024 edition. Run the commands below from the repository root.
+## Install
+
+### Command line
 
 ```bash
-cargo build --release -p satva-cli
+cargo install satva-cli
+```
 
+That installs a `satva` binary.
+
+### Python
+
+```bash
+pip install satva
+```
+
+Requires Python 3.9 or newer.
+
+### Rust
+
+Add the crates you call from your own code:
+
+```bash
+cargo add satva-runner satva-core
+```
+
+`satva-runner` loads a YAML config and runs it. `satva-core` is the pipeline API used when you build stages in code. Related crates: `satva-types`, `satva-expr`, `satva-parser`, `satva-io`, `satva-arrow`, and `satva-execution`.
+
+## Quick start
+
+```bash
 mkdir -p tmp
 
 cat > tmp/input.jsonl <<'EOF'
@@ -46,7 +72,7 @@ stages:
     fields: [name, salary, bonus]
 EOF
 
-cargo run -p satva-cli -- run --config tmp/pipeline.yaml
+satva run --config tmp/pipeline.yaml
 cat tmp/output.jsonl
 ```
 
@@ -58,13 +84,7 @@ A more detailed [employee pipeline](crates/satva-cli/examples/pipeline.yaml) dem
 
 ## Python
 
-`satva.run` calls the same runner as the CLI. Build the extension from `crates/satva-python` with [maturin](https://www.maturin.rs/):
-
-```bash
-pip install maturin
-cd crates/satva-python
-maturin develop
-```
+`satva.run` calls the same runner as the CLI.
 
 ```python
 import satva
@@ -76,7 +96,7 @@ print(summary["processed"], summary["succeeded"], summary["skipped"], summary["f
 satva.run("pipeline.yaml", stop_on_error=True)
 ```
 
-The returned dict contains `processed`, `succeeded`, `skipped`, `failed`, and `logs`. `logs` is a list of strings. `stop_on_error` defaults to `False`, which matches the CLI: failed records are counted and the call returns. The package requires Python 3.9 or newer. It is not published to PyPI.
+The returned dict contains `processed`, `succeeded`, `skipped`, `failed`, and `logs`. `logs` is a list of strings. `stop_on_error` defaults to `False`, which matches the CLI: failed records are counted and the call returns.
 
 ## Rust
 
@@ -130,6 +150,23 @@ Integer arithmetic returns an evaluation error on overflow, division or remainde
 
 ## Development
 
+Install a current stable Rust toolchain with Cargo and support for the Rust 2024 edition (1.85 or newer). From the repository root:
+
+```bash
+cargo build --release -p satva-cli
+cargo run -p satva-cli -- run --config tmp/pipeline.yaml
+```
+
+The release binary is `target/release/satva`.
+
+To work on the Python extension, build it in place with [maturin](https://www.maturin.rs/):
+
+```bash
+pip install maturin
+cd crates/satva-python
+maturin develop
+```
+
 ```bash
 # Run all workspace tests
 cargo test --workspace --all-features
@@ -143,6 +180,8 @@ cargo bench -p satva-benchmarks
 ```
 
 `bash scripts/check.sh` also runs `cargo audit` and a release build. Install `cargo-audit` separately. A workspace build compiles `satva-python`, which needs Python development headers (`python3-dev` or the equivalent for your platform).
+
+`satva-benchmarks` and `satva-python` are workspace members and are not published to crates.io. The Python package is built from `crates/satva-python` and published to PyPI with maturin. Publish the Rust crates in dependency order: `satva-types`, `satva-expr`, `satva-parser`, `satva-arrow`, `satva-core`, `satva-io`, `satva-execution`, `satva-runner`, then `satva-cli`.
 
 ## Documentation
 

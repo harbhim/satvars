@@ -1,7 +1,15 @@
 [package]
 name = "satva-core"
-version = "0.1.0"
-edition = "2024"
+description = "Pipeline orchestration and built-in stages for Satva"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+readme.workspace = true
+keywords.workspace = true
 
 [lints]
 workspace = true
@@ -9,6 +17,6 @@ workspace = true
 [dependencies]
 anyhow.workspace = true
 thiserror.workspace = true
-satva-types = { path = "../satva-types" }
-satva-expr = { path = "../satva-expr" }
-satva-arrow = { path = "../satva-arrow" }
+satva-types.workspace = true
+satva-expr.workspace = true
+satva-arrow.workspace = true

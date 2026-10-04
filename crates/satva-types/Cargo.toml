@@ -1,7 +1,15 @@
 [package]
 name = "satva-types"
-version = "0.1.0"
-edition = "2024"
+description = "Records, values, and schemas for Satva data pipelines"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+readme.workspace = true
+keywords.workspace = true
 
 [dependencies]
 anyhow.workspace = true

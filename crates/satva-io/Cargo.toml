@@ -1,7 +1,15 @@
 [package]
 name = "satva-io"
-version = "0.1.0"
-edition = "2024"
+description = "CSV, TSV, JSON, Parquet, and Excel readers and writers for Satva"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+readme.workspace = true
+keywords.workspace = true
 
 [lints]
 workspace = true
@@ -14,5 +22,5 @@ csv = "1"
 parquet = { workspace = true, features = ["arrow"] }
 rust_xlsxwriter = "0.79"
 serde_json = "1"
-satva-core = { path = "../satva-core" }
-satva-types = { path = "../satva-types" }
+satva-core.workspace = true
+satva-types.workspace = true

@@ -33,6 +33,8 @@ stages:
     expression: "salary * 0.15"
 ```
 
+Django can supply this source from a `FileField` file object. The YAML `source.type` still selects the format. See [Django](django.md).
+
 ## Source
 
 ### JSON Source

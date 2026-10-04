@@ -96,6 +96,32 @@ pub enum StageConfig {
     SetField { field: String, expression: String },
 }
 
+impl SourceConfig {
+    /// Source type name used in YAML (`json`, `csv`, `excel`, and so on).
+    pub fn kind(&self) -> &'static str {
+        match self {
+            Self::Json { .. } => "json",
+            Self::JsonArray { .. } => "json_array",
+            Self::Csv { .. } => "csv",
+            Self::Tsv { .. } => "tsv",
+            Self::Parquet { .. } => "parquet",
+            Self::Excel { .. } => "excel",
+        }
+    }
+
+    /// Replace the source path. The source type stays the same.
+    pub fn set_path(&mut self, new_path: PathBuf) {
+        match self {
+            Self::Json { path }
+            | Self::JsonArray { path }
+            | Self::Csv { path }
+            | Self::Tsv { path }
+            | Self::Parquet { path } => *path = new_path,
+            Self::Excel { path, .. } => *path = new_path,
+        }
+    }
+}
+
 impl PipelineConfig {
     pub fn load(path: &Path) -> Result<Self> {
         let text = std::fs::read_to_string(path)

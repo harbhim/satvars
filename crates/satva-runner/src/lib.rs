@@ -21,6 +21,11 @@ pub struct PipelineRunReport {
 /// Load a YAML pipeline config, run it, and return the schema, summary, and logs.
 pub fn run_yaml(path: impl AsRef<Path>, options: PipelineOptions) -> Result<PipelineRunReport> {
     let config = PipelineConfig::load(path.as_ref())?;
+    run_config(config, options)
+}
+
+/// Run an already loaded pipeline config.
+pub fn run_config(config: PipelineConfig, options: PipelineOptions) -> Result<PipelineRunReport> {
     let (mut pipeline, schema) = config.build()?;
     let result = pipeline.run(options)?;
     Ok(PipelineRunReport {

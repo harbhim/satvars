@@ -98,6 +98,12 @@ satva.run("pipeline.yaml", stop_on_error=True)
 
 The returned dict contains `processed`, `succeeded`, `skipped`, `failed`, and `logs`. `logs` is a list of strings. `stop_on_error` defaults to `False`, which matches the CLI: failed records are counted and the call returns.
 
+A Django `FileField` can be the source. Satva reads the file object when the stored name is a data file and the extension matches `source.type` in the YAML. See [Django](docs/django.md).
+
+```python
+summary = satva.run("pipelines/employees.yaml", source=row.spreadsheet)
+```
+
 ## Rust
 
 ```rust,ignore
@@ -203,5 +209,6 @@ From GitHub, the same two token values go in repository secrets named `CARGO_REG
 
 - [Getting started and Rust library usage](docs/getting-started.md)
 - [Pipeline configuration](docs/pipeline-config.md)
+- [Django FileField sources](docs/django.md)
 - [Expression language](docs/expression-language.md)
 - [Architecture](docs/architecture.md)

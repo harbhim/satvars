@@ -181,7 +181,23 @@ cargo bench -p satva-benchmarks
 
 `bash scripts/check.sh` also runs `cargo audit` and a release build. Install `cargo-audit` separately. A workspace build compiles `satva-python`, which needs Python development headers (`python3-dev` or the equivalent for your platform).
 
-`satva-benchmarks` and `satva-python` are workspace members and are not published to crates.io. The Python package is built from `crates/satva-python` and published to PyPI with maturin. Publish the Rust crates in dependency order: `satva-types`, `satva-expr`, `satva-parser`, `satva-arrow`, `satva-core`, `satva-io`, `satva-execution`, `satva-runner`, then `satva-cli`.
+## Release
+
+`satva-benchmarks` and `satva-python` are not published to crates.io. The Python package is published to PyPI from `crates/satva-python`.
+
+Copy `.env.example` to `.env` and set `CARGO_REGISTRY_TOKEN` and `MATURIN_PYPI_TOKEN`. `.env` is gitignored. Do not commit it.
+
+Bump `version` in the root `Cargo.toml` (`workspace.package` and every `satva-*` dependency) and in `crates/satva-python/pyproject.toml`. Commit that change. Do not publish the version that is already on the registries.
+
+From this machine:
+
+```bash
+bash scripts/publish.sh
+```
+
+The script reads `.env`, publishes the Rust crates, then publishes the Python package.
+
+From GitHub, the same two token values go in repository secrets named `CARGO_REGISTRY_TOKEN` and `PYPI_API_TOKEN`. GitHub cannot read `.env`. Push a tag that matches the version, such as `v0.1.1`. That runs `.github/workflows/release.yml`. The same workflow can be started by hand from the Actions tab; type the version from `Cargo.toml` when asked.
 
 ## Documentation
 

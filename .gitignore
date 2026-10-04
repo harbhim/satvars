@@ -1,4 +1,6 @@
 target
+.venv
+.env
 .zed
 notes.txt
 *.csv

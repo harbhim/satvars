@@ -32,7 +32,7 @@ satva-execution = { version = "0.1.2", path = "crates/satva-execution" }
 satva-runner = { version = "0.1.2", path = "crates/satva-runner" }
 
 [workspace.lints.rust]
-future-incompatible = "warn"
+future_incompatible = "warn"
 nonstandard_style = { level = "deny", priority = -1 }
 
 [workspace.lints.clippy]

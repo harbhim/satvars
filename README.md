@@ -104,6 +104,17 @@ A Django `FileField` can be the source. Satva reads the file object when the sto
 summary = satva.run("pipelines/employees.yaml", source=row.spreadsheet)
 ```
 
+An `external` stage compares each row with values from another file, or with values passed in by the caller. Equal rows can be skipped, and different rows can be replaced or rejected. See [Pipeline configuration](docs/pipeline-config.md).
+
+```yaml
+- type: external
+  key: sku
+  path: catalog.jsonl
+  compare: [name, price]
+  on_match: skip
+  on_differ: replace
+```
+
 ## Rust
 
 ```rust,ignore

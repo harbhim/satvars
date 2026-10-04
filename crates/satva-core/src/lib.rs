@@ -18,6 +18,7 @@ pub use pipeline::{
 pub use sink::Sink;
 pub use source::Source;
 pub use stages::{
+    ExternalCompare, ExternalData, ExternalPolicy, ExternalStage, ExternalTable, ExternalValues,
     FilterStage, RemoveFieldStage, RenameFieldStage, SelectFieldsStage, SetFieldStage,
 };
 pub use validation::SchemaValidation;

@@ -1486,6 +1486,7 @@ dependencies = [
  "pyo3",
  "satva-core",
  "satva-runner",
+ "satva-types",
 ]
 
 [[package]]

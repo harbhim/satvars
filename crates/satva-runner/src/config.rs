@@ -1,9 +1,14 @@
+use std::collections::HashMap;
+use std::fmt;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::{Context, Result, anyhow};
 use serde::Deserialize;
+use serde::de::{self, Deserializer, SeqAccess, Visitor};
 
 use satva_core::{
+    ExternalCompare, ExternalData, ExternalPolicy, ExternalStage, ExternalTable, ExternalValues,
     FilterStage, Pipeline, PipelineStage, RemoveFieldStage, RenameFieldStage, SchemaValidation,
     SelectFieldsStage, SetFieldStage, Sink, Source,
 };
@@ -11,7 +16,7 @@ use satva_io::sink::{CsvSink, ExcelSink, JsonArraySink, JsonSink, ParquetSink, T
 use satva_io::source::{
     CsvSource, ExcelSource, JsonArraySource, JsonSource, ParquetSource, TsvSource,
 };
-use satva_types::Schema;
+use satva_types::{Record, Schema};
 
 #[derive(Debug, Deserialize)]
 pub struct PipelineConfig {
@@ -88,12 +93,56 @@ fn default_sample_size() -> usize {
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum StageConfig {
-    RenameField { from: String, to: String },
-    SelectFields { fields: Vec<String> },
-    RemoveField { fields: Vec<String> },
+    RenameField {
+        from: String,
+        to: String,
+    },
+    SelectFields {
+        fields: Vec<String>,
+    },
+    RemoveField {
+        fields: Vec<String>,
+    },
     SchemaValidation,
-    Filter { expression: String },
-    SetField { field: String, expression: String },
+    Filter {
+        expression: String,
+    },
+    SetField {
+        field: String,
+        expression: String,
+    },
+    /// Compares each row with external values, then continues, skips, fails, or replaces fields.
+    External {
+        #[serde(deserialize_with = "string_or_list")]
+        key: Vec<String>,
+        #[serde(default)]
+        compare: Option<Vec<String>>,
+        #[serde(default)]
+        on_missing: Option<PolicyConfig>,
+        #[serde(default)]
+        on_match: Option<PolicyConfig>,
+        #[serde(default)]
+        on_differ: Option<PolicyConfig>,
+        #[serde(default)]
+        name: Option<String>,
+        #[serde(default)]
+        path: Option<PathBuf>,
+        #[serde(default)]
+        format: Option<String>,
+        #[serde(default)]
+        sheet: Option<String>,
+    },
+}
+
+/// What an `external` stage does when values are missing, equal, or different.
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum PolicyConfig {
+    Continue,
+    Skip,
+    Fail,
+    #[serde(alias = "correct")]
+    Replace,
 }
 
 impl SourceConfig {
@@ -134,6 +183,17 @@ impl PipelineConfig {
     /// Builds a runnable `Pipeline` from this config, plus the inferred
     /// schema (if `schema.infer` was requested) for the caller to print.
     pub fn build(self) -> Result<(Pipeline, Option<Schema>)> {
+        self.build_with(&HashMap::new())
+    }
+
+    /// Same as [`Self::build`], with values for named `external` stages.
+    ///
+    /// A stage with `path` reads that file and does not use `externals`.
+    /// A stage with `name` requires a matching entry.
+    pub fn build_with(
+        self,
+        externals: &HashMap<String, ExternalData>,
+    ) -> Result<(Pipeline, Option<Schema>)> {
         let source = build_source(&self.source);
 
         let schema = if self.schema.infer {
@@ -148,7 +208,7 @@ impl PipelineConfig {
         let mut pipeline = Pipeline::new(source);
 
         for stage_config in &self.stages {
-            pipeline.add_stage(build_stage(stage_config, schema.as_ref())?);
+            pipeline.add_stage(build_stage(stage_config, schema.as_ref(), externals)?);
         }
 
         if let Some(sink_config) = &self.sink {
@@ -187,7 +247,11 @@ fn build_sink(config: &SinkConfig) -> Box<dyn Sink> {
     }
 }
 
-fn build_stage(config: &StageConfig, schema: Option<&Schema>) -> Result<Box<dyn PipelineStage>> {
+fn build_stage(
+    config: &StageConfig,
+    schema: Option<&Schema>,
+    externals: &HashMap<String, ExternalData>,
+) -> Result<Box<dyn PipelineStage>> {
     let stage: Box<dyn PipelineStage> = match config {
         StageConfig::RenameField { from, to } => {
             Box::new(RenameFieldStage::new(from.clone(), to.clone()))
@@ -217,7 +281,226 @@ fn build_stage(config: &StageConfig, schema: Option<&Schema>) -> Result<Box<dyn 
                 .map_err(|e| anyhow!("Failed to parse set_field expression: {e}"))?;
             Box::new(SetFieldStage::new(field.clone(), expr))
         }
+
+        StageConfig::External {
+            key,
+            compare,
+            on_missing,
+            on_match,
+            on_differ,
+            name,
+            path,
+            format,
+            sheet,
+        } => Box::new(build_external(
+            key,
+            compare,
+            *on_missing,
+            *on_match,
+            *on_differ,
+            name,
+            path,
+            format,
+            sheet,
+            externals,
+        )?),
     };
 
     Ok(stage)
+}
+
+fn build_external(
+    key: &[String],
+    compare: &Option<Vec<String>>,
+    on_missing: Option<PolicyConfig>,
+    on_match: Option<PolicyConfig>,
+    on_differ: Option<PolicyConfig>,
+    name: &Option<String>,
+    path: &Option<PathBuf>,
+    format: &Option<String>,
+    sheet: &Option<String>,
+    externals: &HashMap<String, ExternalData>,
+) -> Result<ExternalStage> {
+    let compare = ExternalCompare {
+        key: key.to_vec(),
+        compare: (*compare).clone(),
+        on_missing: policy(on_missing, ExternalPolicy::Continue),
+        on_match: policy(on_match, ExternalPolicy::Skip),
+        on_differ: policy(on_differ, ExternalPolicy::Replace),
+    };
+
+    let (label, values) = match (name, path) {
+        (Some(name), Some(path)) => {
+            return Err(anyhow!(
+                "external stage '{name}' has both name and path ({}). Use a file path or supplied values, not both",
+                path.display()
+            ));
+        }
+        (None, None) => {
+            return Err(anyhow!(
+                "external stage needs a name for supplied values or a path to a file of values"
+            ));
+        }
+        (Some(name), None) => {
+            if name.is_empty() {
+                return Err(anyhow!("external stage name must not be empty"));
+            }
+            let data = externals.get(name).ok_or_else(|| {
+                anyhow!("external stage '{name}' has no values. Pass them in externals, or set path to a file")
+            })?;
+            (name.clone(), values_from_data(name, key, data)?)
+        }
+        (None, Some(path)) => {
+            let format = match format {
+                Some(format) => format.clone(),
+                None => infer_format(path)?,
+            };
+            let records = read_external_file(path, &format, sheet.as_deref())?;
+            let table = ExternalTable::from_records(key, records)
+                .map_err(|err| anyhow!("{path}: {err}", path = path.display()))?;
+            (
+                path.display().to_string(),
+                Arc::new(table) as Arc<dyn ExternalValues>,
+            )
+        }
+    };
+
+    ExternalStage::new(label, compare, values).map_err(|err| anyhow!(err))
+}
+
+fn policy(configured: Option<PolicyConfig>, default: ExternalPolicy) -> ExternalPolicy {
+    match configured {
+        None => default,
+        Some(PolicyConfig::Continue) => ExternalPolicy::Continue,
+        Some(PolicyConfig::Skip) => ExternalPolicy::Skip,
+        Some(PolicyConfig::Fail) => ExternalPolicy::Fail,
+        Some(PolicyConfig::Replace) => ExternalPolicy::Replace,
+    }
+}
+
+fn values_from_data(
+    name: &str,
+    key: &[String],
+    data: &ExternalData,
+) -> Result<Arc<dyn ExternalValues>> {
+    match data {
+        ExternalData::Records(records) => {
+            let table = ExternalTable::from_records(key, records.clone())
+                .map_err(|err| anyhow!("external values '{name}': {err}"))?;
+            Ok(Arc::new(table))
+        }
+        ExternalData::Mapping(entries) => {
+            let [field] = key else {
+                return Err(anyhow!(
+                    "external values '{name}' are keyed by one value, but the stage key has {} fields. Pass a list of records instead",
+                    key.len()
+                ));
+            };
+            let table = ExternalTable::from_mapping(field, entries.clone())
+                .map_err(|err| anyhow!("external values '{name}': {err}"))?;
+            Ok(Arc::new(table))
+        }
+        ExternalData::Lookup(values) => Ok(Arc::clone(values)),
+    }
+}
+
+fn read_external_file(path: &Path, format: &str, sheet: Option<&str>) -> Result<Vec<Record>> {
+    if sheet.is_some() && format != "excel" {
+        return Err(anyhow!(
+            "external file '{}' uses sheet, which only applies to format excel",
+            path.display()
+        ));
+    }
+    let source = source_for_format(path, format, sheet)?;
+    let mut records = Vec::new();
+    for record in source
+        .read()
+        .with_context(|| format!("Failed to read external values from {}", path.display()))?
+    {
+        records.push(
+            record.with_context(|| {
+                format!("Failed to read external values from {}", path.display())
+            })?,
+        );
+    }
+    Ok(records)
+}
+
+fn source_for_format(path: &Path, format: &str, sheet: Option<&str>) -> Result<Box<dyn Source>> {
+    let path = path.to_path_buf();
+    let config = match format {
+        "json" => SourceConfig::Json { path },
+        "json_array" => SourceConfig::JsonArray { path },
+        "csv" => SourceConfig::Csv { path },
+        "tsv" => SourceConfig::Tsv { path },
+        "parquet" => SourceConfig::Parquet { path },
+        "excel" => SourceConfig::Excel {
+            path,
+            sheet: sheet.map(str::to_string),
+        },
+        other => {
+            return Err(anyhow!(
+                "external format '{other}' is not one of json, json_array, csv, tsv, parquet, excel"
+            ));
+        }
+    };
+    Ok(build_source(&config))
+}
+
+fn infer_format(path: &Path) -> Result<String> {
+    let ext = path
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    match ext.as_str() {
+        "jsonl" | "ndjson" => Ok("json".to_string()),
+        "csv" => Ok("csv".to_string()),
+        "tsv" | "tab" => Ok("tsv".to_string()),
+        "parquet" => Ok("parquet".to_string()),
+        "xlsx" | "xls" | "ods" => Ok("excel".to_string()),
+        "json" => Err(anyhow!(
+            "external file '{}' needs format: json or format: json_array",
+            path.display()
+        )),
+        _ => Err(anyhow!(
+            "external file '{}' needs a format. Use json, json_array, csv, tsv, parquet, or excel",
+            path.display()
+        )),
+    }
+}
+
+fn string_or_list<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct StringOrList;
+
+    impl<'de> Visitor<'de> for StringOrList {
+        type Value = Vec<String>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            formatter.write_str("a field name or a list of field names")
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            Ok(vec![value.to_string()])
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where
+            A: SeqAccess<'de>,
+        {
+            let mut fields = Vec::new();
+            while let Some(field) = seq.next_element()? {
+                fields.push(field);
+            }
+            Ok(fields)
+        }
+    }
+
+    deserializer.deserialize_any(StringOrList)
 }

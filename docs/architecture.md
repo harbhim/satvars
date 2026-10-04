@@ -65,6 +65,8 @@ A `Pipeline` connects a `Source`, zero or more `PipelineStage`s, and optionally 
 
 Short-circuit evaluation protects `&&` and `||` — if the left side determines the result, the right side is never evaluated. This allows patterns like `is_not_null(salary) && salary > 50000` to work safely with null fields.
 
+An `external` stage compares record fields with values from outside the source. Those values come from another file or from records supplied by the caller. The stage then continues, skips, fails, or replaces the compared fields.
+
 ### Expressions
 
 Expressions are immutable AST nodes built with the builder API in `satva-expr` or parsed from strings via `satva-parser`. The evaluator resolves them against a Record at runtime.

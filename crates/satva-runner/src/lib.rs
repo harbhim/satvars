@@ -1,11 +1,14 @@
 mod config;
 
-pub use config::{PipelineConfig, SchemaConfig, SinkConfig, SourceConfig, StageConfig};
+pub use config::{
+    PipelineConfig, PolicyConfig, SchemaConfig, SinkConfig, SourceConfig, StageConfig,
+};
 
+use std::collections::HashMap;
 use std::path::Path;
 
 use anyhow::Result;
-use satva_core::{PipelineLog, PipelineOptions, PipelineSummary};
+use satva_core::{ExternalData, PipelineLog, PipelineOptions, PipelineSummary};
 use satva_types::Schema;
 
 /// Outcome of a YAML pipeline run.
@@ -26,7 +29,16 @@ pub fn run_yaml(path: impl AsRef<Path>, options: PipelineOptions) -> Result<Pipe
 
 /// Run an already loaded pipeline config.
 pub fn run_config(config: PipelineConfig, options: PipelineOptions) -> Result<PipelineRunReport> {
-    let (mut pipeline, schema) = config.build()?;
+    run_config_with(config, options, &HashMap::new())
+}
+
+/// Run a loaded config, resolving named `external` stages from `externals`.
+pub fn run_config_with(
+    config: PipelineConfig,
+    options: PipelineOptions,
+    externals: &HashMap<String, ExternalData>,
+) -> Result<PipelineRunReport> {
+    let (mut pipeline, schema) = config.build_with(externals)?;
     let result = pipeline.run(options)?;
     Ok(PipelineRunReport {
         schema,

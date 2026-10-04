@@ -57,6 +57,45 @@ stages:
 
 A non-data name such as `photo.png` raises `RuntimeError`. An uploaded `django.core.files.File` is accepted the same way, using its `.name`. Full steps are in the [Django guide](https://github.com/harbhim/satvars/blob/master/docs/django.md).
 
+## External values
+
+An `external` stage compares each row with values from outside the file. Point `path` at another data file, or pass the values to `satva.run` under the stage `name`. The YAML `on_match`, `on_differ`, and `on_missing` settings choose continue, skip, fail, or replace. The same comparison runs for a file, a list, or a lookup.
+
+```yaml
+stages:
+  - type: external
+    name: catalog
+    key: sku
+    compare: [name, price]
+    on_match: skip
+    on_differ: replace
+```
+
+```python
+summary = satva.run(
+    "pipelines/products.yaml",
+    externals={
+        "catalog": [
+            {"sku": "A1", "name": "Widget", "price": "10"},
+        ]
+    },
+)
+```
+
+A callable can supply one key at a time. It receives the key fields and returns the values to compare, or `None` when that key has no external value.
+
+```python
+def catalog(key):
+    current = lookup(key["sku"])
+    if current is None:
+        return None
+    return {"name": current.name, "price": str(current.price)}
+
+summary = satva.run("pipelines/products.yaml", externals={"catalog": catalog})
+```
+
+Field values are `None`, `bool`, `int`, `float`, or `str`. A named stage with no values raises `RuntimeError` before any row is read. A stage with `path` reads that file and does not use `externals`.
+
 ```yaml
 source:
   type: json

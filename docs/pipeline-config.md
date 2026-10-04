@@ -179,6 +179,64 @@ Adds or overwrites a field with the result of an expression.
 
 String literals inside expressions must use escaped quotes in YAML: `"\"value\""`.
 
+### external
+
+Compares each row with values that come from outside the source file. The values can be another file, or any records the caller supplies. The stage then continues, skips, fails, or replaces fields. The comparison is the same wherever the values came from.
+
+```yaml
+- type: external
+  key: sku
+  path: catalog.jsonl
+  compare: [name, price]
+  on_missing: continue   # no external row for this key
+  on_match: skip         # compared fields are equal
+  on_differ: replace     # copy those fields from the external values
+```
+
+`key` is one field name, or a list of field names. A row with a missing or null key fails. `compare` lists the fields to compare. When it is omitted, every external field except the key is compared. `compare: []` checks only that the key exists.
+
+`on_missing` defaults to `continue`. `on_match` defaults to `skip`. `on_differ` defaults to `replace`. Each one is `continue`, `skip`, `fail`, or `replace`. `correct` is another name for `replace`. `on_missing: replace` is rejected, because there is no external value to copy. `skip` and `fail` are written to the run log. Two external rows with the same key are an error before any source row is read.
+
+`path` reads those values with the same readers as a source. `format` is `json`, `json_array`, `csv`, `tsv`, `parquet`, or `excel`. It is inferred from the extension. A `.json` file needs `format`, because that extension is used for both JSONL and a JSON array. `sheet` selects an Excel worksheet.
+
+To pass the values from Rust or Python instead of a file, use `name` and omit `path`. A stage cannot set both.
+
+```yaml
+- type: external
+  name: catalog
+  key: sku
+  compare: [name, price]
+```
+
+```rust,ignore
+use std::collections::HashMap;
+use satva_core::ExternalData;
+
+let mut externals = HashMap::new();
+externals.insert("catalog".to_string(), ExternalData::Records(existing_products));
+satva_runner::run_config_with(config, options, &externals)?;
+```
+
+From Python, `externals` is a dict. A list of dicts is indexed by `key`. A dict of dicts maps one key value to the fields to compare. A callable receives the key fields and returns those fields, or `None` when the key has no external value. Field values are `None`, `bool`, `int`, `float`, or `str`. An integer and the string `"1"` are different values.
+
+```python
+satva.run("pipelines/products.yaml", externals={
+    "catalog": [
+        {"sku": "A1", "name": "Widget", "price": "10"},
+    ]
+})
+```
+
+```python
+def catalog(key):
+    current = lookup(key["sku"])
+    if current is None:
+        return None
+    return {"name": current.name, "price": current.price}
+
+satva.run("pipelines/products.yaml", externals={"catalog": catalog})
+```
+
 ## Full Example
 
 ```yaml

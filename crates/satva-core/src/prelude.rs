@@ -9,5 +9,6 @@ pub use crate::batch::{
     RecordSourceAdapter, SelectFieldsBatch, SetFieldBatch,
 };
 pub use crate::stages::{
+    ExternalCompare, ExternalData, ExternalPolicy, ExternalStage, ExternalTable, ExternalValues,
     FilterStage, RemoveFieldStage, RenameFieldStage, SelectFieldsStage, SetFieldStage,
 };

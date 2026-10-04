@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -5,8 +6,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3::types::PyTuple;
-use satva_core::PipelineOptions;
-use satva_runner::{PipelineConfig, PipelineRunReport, run_config};
+use satva_core::{ExternalData, PipelineOptions};
+use satva_runner::{PipelineConfig, PipelineRunReport, run_config_with};
 
 /// Run `config_path`, reading the source from a Django file object.
 ///
@@ -19,6 +20,7 @@ pub fn run_with_django_source(
     config_path: &Path,
     options: PipelineOptions,
     source: &Bound<'_, PyAny>,
+    externals: &HashMap<String, ExternalData>,
 ) -> PyResult<PipelineRunReport> {
     if !is_django_file(source)? {
         return Err(PyRuntimeError::new_err(
@@ -34,7 +36,8 @@ pub fn run_with_django_source(
     let temp = TempDataFile::create(&name, &bytes)?;
     config.source.set_path(temp.path.clone());
 
-    run_config(config, options).map_err(|err| PyRuntimeError::new_err(format!("{err:#}")))
+    run_config_with(config, options, externals)
+        .map_err(|err| PyRuntimeError::new_err(format!("{err:#}")))
 }
 
 fn is_django_file(obj: &Bound<'_, PyAny>) -> PyResult<bool> {

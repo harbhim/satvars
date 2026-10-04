@@ -1,4 +1,5 @@
 mod django;
+mod external;
 
 use std::path::Path;
 
@@ -6,7 +7,7 @@ use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 use satva_core::{ErrorPolicy, PipelineLog, PipelineOptions};
-use satva_runner::run_yaml;
+use satva_runner::{run_config_with, run_yaml};
 
 /// Run a YAML pipeline.
 ///
@@ -18,13 +19,18 @@ use satva_runner::run_yaml;
 /// `source` accepts a Django `FileField` value or `django.core.files.File`. Satva
 /// reads that file object when its name is a data file whose extension matches
 /// `source.type` in the YAML. The YAML `source.path` is not used in that case.
+///
+/// `externals` maps each named YAML `external` stage to the values it compares
+/// against: a list of records, a key-to-values mapping, or a lookup callable.
+/// The stage decides whether to continue, skip, fail, or replace.
 #[pyfunction]
-#[pyo3(signature = (path, *, stop_on_error = false, source = None))]
+#[pyo3(signature = (path, *, stop_on_error = false, source = None, externals = None))]
 fn run(
     py: Python<'_>,
     path: &str,
     stop_on_error: bool,
     source: Option<Bound<'_, PyAny>>,
+    externals: Option<Bound<'_, PyAny>>,
 ) -> PyResult<Py<PyDict>> {
     let options = if stop_on_error {
         PipelineOptions::new().with_error_policy(ErrorPolicy::StopOnError)
@@ -32,10 +38,19 @@ fn run(
         PipelineOptions::new()
     };
 
+    let provided = external::data_from_py(externals.as_ref())?;
     let report = match source {
-        Some(source) => django::run_with_django_source(Path::new(path), options, &source)?,
-        None => run_yaml(Path::new(path), options)
-            .map_err(|err| PyRuntimeError::new_err(format!("{err:#}")))?,
+        Some(source) => {
+            django::run_with_django_source(Path::new(path), options, &source, &provided)?
+        }
+        None => if provided.is_empty() {
+            run_yaml(Path::new(path), options)
+        } else {
+            let config = satva_runner::PipelineConfig::load(Path::new(path))
+                .map_err(|err| PyRuntimeError::new_err(format!("{err:#}")))?;
+            run_config_with(config, options, &provided)
+        }
+        .map_err(|err| PyRuntimeError::new_err(format!("{err:#}")))?,
     };
 
     let dict = PyDict::new(py);
@@ -135,7 +150,8 @@ mod tests {
         let config = write_pipeline(&dir.0);
 
         Python::attach(|py| {
-            let summary = run(py, config.to_str().expect("utf8 path"), false, None).expect("run");
+            let summary =
+                run(py, config.to_str().expect("utf8 path"), false, None, None).expect("run");
             let summary = summary.bind(py);
             assert_eq!(
                 summary
@@ -196,7 +212,7 @@ mod tests {
 
         Python::attach(|py| {
             let error =
-                run(py, config.to_str().expect("utf8 path"), true, None).expect_err("raises");
+                run(py, config.to_str().expect("utf8 path"), true, None, None).expect_err("raises");
             assert!(error.is_instance_of::<PyRuntimeError>(py));
             let message = error.to_string();
             assert!(message.contains("Record 1 failed"), "{message}");
@@ -267,6 +283,7 @@ uploaded = FieldFile(file_name, file_data)
                 config.to_str().expect("utf8 path"),
                 false,
                 Some(file.clone()),
+                None,
             )
             .expect("run");
             let summary = summary.bind(py);
@@ -351,6 +368,7 @@ uploaded = UploadedFile(file_data)
                 config.to_str().expect("utf8 path"),
                 false,
                 Some(file.clone()),
+                None,
             )
             .expect("run");
             assert!(
@@ -378,8 +396,14 @@ uploaded = UploadedFile(file_data)
 
         Python::attach(|py| {
             let file = django_file(py, "uploads/photo.png", b"not-an-image").expect("file");
-            let error = run(py, config.to_str().expect("utf8 path"), false, Some(file))
-                .expect_err("rejects");
+            let error = run(
+                py,
+                config.to_str().expect("utf8 path"),
+                false,
+                Some(file),
+                None,
+            )
+            .expect_err("rejects");
             let message = error.to_string();
             assert!(message.contains("not a data file"), "{message}");
         });
@@ -398,13 +422,184 @@ uploaded = UploadedFile(file_data)
 
         Python::attach(|py| {
             let file = django_file(py, "uploads/people.jsonl", b"{}\n").expect("file");
-            let error = run(py, config.to_str().expect("utf8 path"), false, Some(file))
-                .expect_err("rejects");
+            let error = run(
+                py,
+                config.to_str().expect("utf8 path"),
+                false,
+                Some(file),
+                None,
+            )
+            .expect_err("rejects");
             let message = error.to_string();
             assert!(
                 message.contains("does not match source type 'csv'"),
                 "{message}"
             );
         });
+    }
+
+    fn summary_count(summary: &Bound<'_, PyDict>, key: &str) -> usize {
+        summary
+            .get_item(key)
+            .expect("item")
+            .expect(key)
+            .extract::<usize>()
+            .expect("usize")
+    }
+
+    #[test]
+    fn external_values_skip_matches_and_replace_differences() {
+        Python::initialize();
+        let dir = TempDir::new();
+        let input = dir.0.join("products.jsonl");
+        let output = dir.0.join("output.jsonl");
+        fs::write(
+            &input,
+            concat!(
+                "{\"sku\":\"new\",\"name\":\"Widget\",\"price\":10}\n",
+                "{\"sku\":\"same\",\"name\":\"Same\",\"price\":5}\n",
+                "{\"sku\":\"changed\",\"name\":\"Old\",\"price\":1}\n",
+            ),
+        )
+        .expect("write input");
+        let config = dir.0.join("pipeline.yaml");
+        fs::write(
+            &config,
+            format!(
+                "source:\n  type: json\n  path: {}\nsink:\n  type: json\n  path: {}\nstages:\n  - type: external\n    name: catalog\n    key: sku\n    compare: [name, price]\n",
+                input.display(),
+                output.display(),
+            ),
+        )
+        .expect("write config");
+
+        Python::attach(|py| {
+            let locals = PyDict::new(py);
+            py.run(
+                c"
+catalog = [
+    {'sku': 'same', 'name': 'Same', 'price': 5},
+    {'sku': 'changed', 'name': 'FromDb', 'price': 9},
+]
+",
+                None,
+                Some(&locals),
+            )
+            .expect("define catalog");
+            let externals = PyDict::new(py);
+            externals
+                .set_item(
+                    "catalog",
+                    locals.get_item("catalog").expect("item").expect("catalog"),
+                )
+                .expect("externals");
+
+            let summary = run(
+                py,
+                config.to_str().expect("utf8 path"),
+                false,
+                None,
+                Some(externals.into_any()),
+            )
+            .expect("run");
+            let summary = summary.bind(py);
+            assert_eq!(summary_count(&summary, "processed"), 3);
+            assert_eq!(summary_count(&summary, "succeeded"), 2);
+            assert_eq!(summary_count(&summary, "skipped"), 1);
+            assert_eq!(summary_count(&summary, "failed"), 0);
+            let logs = summary.get_item("logs").expect("item").expect("logs");
+            let logs = logs.extract::<Vec<String>>().expect("log strings");
+            assert!(logs.iter().any(|line| line.contains("sku=same")));
+        });
+
+        let written = fs::read_to_string(output).expect("read output");
+        assert!(written.contains("Widget"));
+        assert!(written.contains("FromDb"));
+        assert!(!written.contains("Same"));
+        assert!(!written.contains("\"Old\""));
+    }
+
+    #[test]
+    fn external_stage_requires_values() {
+        Python::initialize();
+        let dir = TempDir::new();
+        let input = dir.0.join("products.jsonl");
+        fs::write(&input, "{\"sku\":\"new\"}\n").expect("write input");
+        let config = dir.0.join("pipeline.yaml");
+        fs::write(
+            &config,
+            format!(
+                "source:\n  type: json\n  path: {}\nstages:\n  - type: external\n    name: catalog\n    key: sku\n",
+                input.display(),
+            ),
+        )
+        .expect("write config");
+
+        Python::attach(|py| {
+            let error = run(py, config.to_str().expect("utf8 path"), false, None, None)
+                .expect_err("missing values");
+            let message = error.to_string();
+            assert!(message.contains("catalog"), "{message}");
+            assert!(message.contains("no values"), "{message}");
+        });
+    }
+
+    #[test]
+    fn django_source_can_compare_lookup_values() {
+        Python::initialize();
+        let dir = TempDir::new();
+        let output = dir.0.join("output.jsonl");
+        let config = dir.0.join("pipeline.yaml");
+        fs::write(
+            &config,
+            format!(
+                "source:\n  type: json\n  path: ignored.jsonl\nsink:\n  type: json\n  path: {}\nstages:\n  - type: external\n    name: catalog\n    key: sku\n    compare: [name]\n",
+                output.display(),
+            ),
+        )
+        .expect("write config");
+
+        Python::attach(|py| {
+            let file = django_file(
+                py,
+                "uploads/products.jsonl",
+                b"{\"sku\":\"same\",\"name\":\"Same\"}\n{\"sku\":\"new\",\"name\":\"Widget\"}\n",
+            )
+            .expect("file");
+            let locals = PyDict::new(py);
+            py.run(
+                c"
+def catalog(key):
+    if key['sku'] == 'same':
+        return {'name': 'Same'}
+    return None
+",
+                None,
+                Some(&locals),
+            )
+            .expect("define lookup");
+            let externals = PyDict::new(py);
+            externals
+                .set_item(
+                    "catalog",
+                    locals.get_item("catalog").expect("item").expect("lookup"),
+                )
+                .expect("externals");
+            let summary = run(
+                py,
+                config.to_str().expect("utf8 path"),
+                false,
+                Some(file),
+                Some(externals.into_any()),
+            )
+            .expect("run");
+            let summary = summary.bind(py);
+            assert_eq!(summary_count(&summary, "succeeded"), 1);
+            assert_eq!(summary_count(&summary, "skipped"), 1);
+        });
+
+        let written = fs::read_to_string(output).expect("read output");
+        assert!(written.contains("Widget"));
+        assert!(!written.contains("Same"));
     }
 }

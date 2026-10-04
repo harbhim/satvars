@@ -1,9 +1,13 @@
+pub mod external;
 pub mod filter;
 pub mod remove_field;
 pub mod rename_field;
 pub mod select_fields;
 pub mod set_field;
 
+pub use external::{
+    ExternalCompare, ExternalData, ExternalPolicy, ExternalStage, ExternalTable, ExternalValues,
+};
 pub use filter::FilterStage;
 pub use remove_field::RemoveFieldStage;
 pub use rename_field::RenameFieldStage;

@@ -76,3 +76,51 @@ summary = satva.run("pipelines/employees.yaml", source=request.FILES["spreadshee
 ```
 
 The upload's `.name` follows the same extension rules.
+
+## Compare uploaded rows with stored values
+
+The `external` stage compares each uploaded row with values you already have. Those values can be a file, a list of records, or a lookup. Django is one place the lookup can read them from. The stage itself does not know that they came from a model.
+
+```yaml
+source:
+  type: csv
+  path: products.csv
+
+sink:
+  type: json
+  path: media/cleaned/products.jsonl
+
+stages:
+  - type: external
+    name: catalog
+    key: sku
+    compare: [name, price]
+    on_missing: continue
+    on_match: skip
+    on_differ: replace
+```
+
+```python
+import satva
+
+
+def catalog(key):
+    product = Product.objects.filter(sku=key["sku"]).first()
+    if product is None:
+        return None
+    return {"name": product.name, "price": str(product.price)}
+
+
+def import_products(upload):
+    return satva.run(
+        "pipelines/products.yaml",
+        source=upload.spreadsheet,
+        externals={"catalog": catalog},
+    )
+```
+
+A matching `name` and `price` is skipped. A different stored product replaces those fields on the row. A sku with no stored product is written as uploaded. To reject a difference instead, set `on_differ: fail`. The reason is in `summary["logs"]`.
+
+Returned values must be `None`, `bool`, `int`, `float`, or `str`. Convert a Django `Decimal` first. CSV cells are strings, so compare them with strings. The lookup runs once per row on the request thread.
+
+The same YAML also accepts `externals={"catalog": [...]}` or, with `path` instead of `name`, a file of product values. See [Pipeline configuration](pipeline-config.md).

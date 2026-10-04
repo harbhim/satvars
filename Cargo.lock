@@ -1392,7 +1392,7 @@ dependencies = [
 
 [[package]]
 name = "satva-arrow"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "satva-expr",
@@ -1401,7 +1401,7 @@ dependencies = [
 
 [[package]]
 name = "satva-benchmarks"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "criterion",
@@ -1417,7 +1417,7 @@ dependencies = [
 
 [[package]]
 name = "satva-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -1427,7 +1427,7 @@ dependencies = [
 
 [[package]]
 name = "satva-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "satva-arrow",
@@ -1438,7 +1438,7 @@ dependencies = [
 
 [[package]]
 name = "satva-execution"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "rayon",
@@ -1449,7 +1449,7 @@ dependencies = [
 
 [[package]]
 name = "satva-expr"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "satva-types",
@@ -1457,7 +1457,7 @@ dependencies = [
 
 [[package]]
 name = "satva-io"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "arrow",
@@ -1472,7 +1472,7 @@ dependencies = [
 
 [[package]]
 name = "satva-parser"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "satva-expr",
  "satva-types",
@@ -1481,7 +1481,7 @@ dependencies = [
 
 [[package]]
 name = "satva-python"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "pyo3",
  "satva-core",
@@ -1490,7 +1490,7 @@ dependencies = [
 
 [[package]]
 name = "satva-runner"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "satva-core",
@@ -1503,7 +1503,7 @@ dependencies = [
 
 [[package]]
 name = "satva-types"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "indexmap",

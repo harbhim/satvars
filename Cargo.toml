@@ -3,7 +3,7 @@ members = ["crates/*", "benchmarks"]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/harbhim/satvars"
@@ -22,14 +22,14 @@ serde_json = "1"
 anyhow = "1"
 thiserror = "2"
 indexmap = "2"
-satva-types = { version = "0.1.0", path = "crates/satva-types" }
-satva-expr = { version = "0.1.0", path = "crates/satva-expr" }
-satva-parser = { version = "0.1.0", path = "crates/satva-parser" }
-satva-arrow = { version = "0.1.0", path = "crates/satva-arrow" }
-satva-core = { version = "0.1.0", path = "crates/satva-core" }
-satva-io = { version = "0.1.0", path = "crates/satva-io" }
-satva-execution = { version = "0.1.0", path = "crates/satva-execution" }
-satva-runner = { version = "0.1.0", path = "crates/satva-runner" }
+satva-types = { version = "0.1.1", path = "crates/satva-types" }
+satva-expr = { version = "0.1.1", path = "crates/satva-expr" }
+satva-parser = { version = "0.1.1", path = "crates/satva-parser" }
+satva-arrow = { version = "0.1.1", path = "crates/satva-arrow" }
+satva-core = { version = "0.1.1", path = "crates/satva-core" }
+satva-io = { version = "0.1.1", path = "crates/satva-io" }
+satva-execution = { version = "0.1.1", path = "crates/satva-execution" }
+satva-runner = { version = "0.1.1", path = "crates/satva-runner" }
 
 [workspace.lints.rust]
 future-incompatible = "warn"

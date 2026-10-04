@@ -214,7 +214,7 @@ bash scripts/publish.sh
 
 The script reads `.env`, publishes the Rust crates, then publishes the Python package.
 
-From GitHub, the same two token values go in repository secrets named `CARGO_REGISTRY_TOKEN` and `PYPI_API_TOKEN`. GitHub cannot read `.env`. Push a tag that matches the version, such as `v0.1.1`. That runs `.github/workflows/release.yml`. The same workflow can be started by hand from the Actions tab; type the version from `Cargo.toml` when asked.
+From GitHub, the same two token values go in repository secrets named `CARGO_REGISTRY_TOKEN` and `PYPI_API_TOKEN`. GitHub cannot read `.env`. Push a tag that matches the version, such as `v0.1.2`. That runs `.github/workflows/release.yml`. The same workflow can be started by hand from the Actions tab; type the version from `Cargo.toml` when asked.
 
 ## Documentation
 

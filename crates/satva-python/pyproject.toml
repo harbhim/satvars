@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "satva"
-version = "0.1.1"
+version = "0.1.2"
 description = "Run Satva data pipelines from Python"
 readme = "README.md"
 license = "MIT"

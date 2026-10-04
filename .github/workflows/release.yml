@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to publish. Must match Cargo.toml, for example 0.1.1"
+        description: "Version to publish. Must match Cargo.toml, for example 0.1.2"
         required: true
         type: string
 

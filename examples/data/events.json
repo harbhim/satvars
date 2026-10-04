@@ -1,0 +1,5 @@
+[
+  {"id": 1, "kind": "login", "user": "ada"},
+  {"id": 2, "kind": "logout", "user": "ada"},
+  {"id": 3, "kind": "login", "user": "ben"}
+]

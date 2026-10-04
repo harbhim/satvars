@@ -4,5 +4,7 @@ target
 .zed
 notes.txt
 *.csv
+!examples/**/*.csv
+examples/output/
 .DS_Store
 *employees*

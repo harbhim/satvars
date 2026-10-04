@@ -1,0 +1,27 @@
+# CSV cells are strings. Schema inference plus schema_validation
+# coerces amount to a number before the filter and tax calculation.
+# From the repository root:
+#   mkdir -p examples/output
+#   satva run --config examples/csv-schema.yaml
+
+source:
+  type: csv
+  path: examples/data/orders.csv
+
+sink:
+  type: csv
+  path: examples/output/paid-orders.csv
+
+schema:
+  infer: true
+  sample_size: 1000
+
+stages:
+  - type: schema_validation
+  - type: filter
+    expression: 'status == "paid" && amount >= 20'
+  - type: set_field
+    field: tax
+    expression: "amount * 0.08"
+  - type: select_fields
+    fields: [order_id, customer, amount, tax]

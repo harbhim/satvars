@@ -1,0 +1,24 @@
+# Rename, drop, and build a display name, then write JSONL.
+# From the repository root:
+#   mkdir -p examples/output
+#   satva run --config examples/reshape-fields.yaml
+
+source:
+  type: tsv
+  path: examples/data/contacts.tsv
+
+sink:
+  type: json
+  path: examples/output/contacts.jsonl
+
+stages:
+  - type: rename_field
+    from: first_name
+    to: given_name
+  - type: remove_field
+    fields: [temp_note, internal_id]
+  - type: set_field
+    field: display_name
+    expression: 'upper(trim(given_name)) + " " + upper(trim(last_name))'
+  - type: select_fields
+    fields: [display_name, email]

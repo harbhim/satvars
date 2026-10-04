@@ -1,0 +1,22 @@
+# Keep active Engineering people and add a bonus.
+# From the repository root:
+#   mkdir -p examples/output
+#   satva run --config examples/filter-and-compute.yaml
+#   cat examples/output/people.jsonl
+
+source:
+  type: json
+  path: examples/data/people.jsonl
+
+sink:
+  type: json
+  path: examples/output/people.jsonl
+
+stages:
+  - type: filter
+    expression: 'active == true && department == "Engineering" && salary >= 70000'
+  - type: set_field
+    field: bonus
+    expression: "salary * 0.15"
+  - type: select_fields
+    fields: [name, department, salary, bonus]

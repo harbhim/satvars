@@ -1,0 +1,18 @@
+# Read a JSON array and write login events as JSONL.
+# From the repository root:
+#   mkdir -p examples/output
+#   satva run --config examples/json-array.yaml
+
+source:
+  type: json_array
+  path: examples/data/events.json
+
+sink:
+  type: json
+  path: examples/output/logins.jsonl
+
+stages:
+  - type: filter
+    expression: 'kind == "login"'
+  - type: remove_field
+    fields: [kind]

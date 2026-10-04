@@ -80,7 +80,7 @@ The output contains Ada's record with a bonus of `12000.0`. Ben's record is filt
 
 File paths in the YAML configuration are relative to the process working directory. The `json` format is JSONL: one JSON object per line. `json_array` is one JSON array of objects. CSV and TSV inputs are read as strings. Use schema inference and a `schema_validation` stage when those strings need to be coerced. Parquet and Excel sinks buffer rows until the run finishes.
 
-A more detailed [employee pipeline](crates/satva-cli/examples/pipeline.yaml) demonstrates schema validation and string expressions. It expects an `employees.jsonl` input file, which is not included in the repository.
+Sample pipelines with input files live in [`examples/`](examples/). From the repository root, `mkdir -p examples/output` and then `satva run --config examples/filter-and-compute.yaml`. They cover filtering, CSV schema coercion, field reshaping, an external catalog compare, and a JSON array source. Output is written under `examples/output/`.
 
 ## Python
 

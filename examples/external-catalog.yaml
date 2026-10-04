@@ -1,0 +1,23 @@
+# Compare each product with catalog.jsonl.
+# Matching rows are skipped. Different rows copy name and price
+# from the catalog. Rows missing from the catalog are kept as-is.
+# From the repository root:
+#   mkdir -p examples/output
+#   satva run --config examples/external-catalog.yaml
+
+source:
+  type: json
+  path: examples/data/products.jsonl
+
+sink:
+  type: json
+  path: examples/output/products.jsonl
+
+stages:
+  - type: external
+    key: sku
+    path: examples/data/catalog.jsonl
+    compare: [name, price]
+    on_missing: continue
+    on_match: skip
+    on_differ: replace

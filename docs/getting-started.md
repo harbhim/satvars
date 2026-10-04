@@ -17,13 +17,16 @@ cargo build --release
 cargo test
 ```
 
-## Run the Example Pipeline
+## Run the Example Pipelines
+
+Sample configs and input files are in `examples/`. From the repository root:
 
 ```bash
-cargo run -p satva-cli -- run --config crates/satva-cli/examples/pipeline.yaml
+mkdir -p examples/output
+cargo run -p satva-cli -- run --config examples/filter-and-compute.yaml
 ```
 
-This processes `employees.jsonl` (20 employee records), applies schema validation, filters for active Engineering employees with salary >= $70k, computes bonus and display_name fields, and writes the result to `cleaned_employees.jsonl`.
+The other configs are `examples/csv-schema.yaml`, `examples/reshape-fields.yaml`, `examples/external-catalog.yaml`, and `examples/json-array.yaml`. Each writes under `examples/output/`.
 
 ## Run Benchmarks
 
@@ -74,4 +77,4 @@ println!("{:#?}", result.summary);
 
 ### YAML Config
 
-See `crates/satva-cli/examples/pipeline.yaml` for a complete example.
+See `examples/` for complete YAML configs and the input files they read.
